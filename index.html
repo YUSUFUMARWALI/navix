@@ -5,12 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NAVIX — Marketplace & Delivery</title>
 
-<!-- Firebase Messaging SDK -->
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
-
-<!-- Paystack SDK -->
-<script src="https://js.paystack.co/v1/inline.js"></script>
-
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -67,19 +61,19 @@ body {
 
 /* ─── SCREENS ───────────────────────────────────── */
 .screen {
-  display: none !important;
+  display: none;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
 }
-.screen.active { display: flex !important; }
+.screen.active { display: flex; }
 
 /* ─── TOP BAR ───────────────────────────────────── */
 .topbar {
   background: var(--green);
   color: #fff;
   padding: 0 16px;
-  height: 48px;
+  height: 54px;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -102,7 +96,7 @@ body {
   flex: 1;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 10px 12px;
+  padding: 12px;
 }
 
 /* ─── BOTTOM NAV ────────────────────────────────── */
@@ -111,7 +105,7 @@ body {
   border-top: 1px solid var(--border);
   display: flex;
   flex-shrink: 0;
-  height: 52px;
+  height: 58px;
 }
 .botbar-btn {
   flex: 1; border: none; background: none; cursor: pointer;
@@ -142,11 +136,11 @@ body {
 .btn + .btn  { margin-top: 10px; }
 
 /* ─── FORM ELEMENTS ─────────────────────────────── */
-.form-group { margin-bottom: 10px; }
+.form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
 input[type=text], input[type=email], input[type=password],
 input[type=tel], input[type=number], select, textarea {
-  width: 100%; padding: 9px 11px;
+  width: 100%; padding: 11px 13px;
   border: 1.5px solid var(--border); border-radius: var(--radius-sm);
   font-size: 14px; background: var(--white); color: var(--text);
   font-family: inherit; transition: border-color .2s;
@@ -164,7 +158,7 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  padding: 11px 14px;
+  padding: 14px 16px;
   margin-bottom: 12px;
 }
 .card-row { display: flex; justify-content: space-between; align-items: center; }
@@ -184,9 +178,9 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
 .stat-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 8px; text-align: center;
+  border-radius: var(--radius-sm); padding: 14px 12px; text-align: center;
 }
-.stat-num  { font-size: 20px; font-weight: 700; color: var(--green); }
+.stat-num  { font-size: 22px; font-weight: 700; color: var(--green); }
 .stat-lbl  { font-size: 11px; color: var(--muted); margin-top: 3px; }
 
 /* ─── PRODUCT GRID ───────────────────────────────── */
@@ -198,7 +192,7 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 }
 .product-card:active { transform: scale(.97); }
 .product-img {
-  height: 90px; background: var(--surface);
+  height: 110px; background: var(--surface);
   display: flex; align-items: center; justify-content: center;
   font-size: 40px;
 }
@@ -267,7 +261,7 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 /* ─── NOTICE / ALERT BAR ─────────────────────────── */
 .notice {
   background: var(--gold-light); border-left: 3px solid var(--gold);
-  padding: 8px 10px; border-radius: 0 8px 8px 0;
+  padding: 10px 12px; border-radius: 0 8px 8px 0;
   margin-bottom: 14px; font-size: 13px; line-height: 1.5;
 }
 .notice-info {
@@ -329,7 +323,7 @@ select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.o
 /* ─── HERO STRIP ─────────────────────────────────── */
 .hero {
   background: var(--green);
-  padding: 10px 14px 14px;
+  padding: 16px 16px 20px;
   color: #fff; flex-shrink: 0;
 }
 
@@ -418,8 +412,8 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; 
 /* ─── SPLASH ─────────────────────────────────────── */
 #s-splash {
   background: var(--green);
-  align-items: center;
-  justify-content: center;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
   height: 100%;
 }
 </style>
@@ -440,18 +434,15 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; 
   <!--  SPLASH                                         -->
   <!-- ═══════════════════════════════════════════════ -->
   <div id="s-splash" class="screen active">
-    <div style="text-align:center;color:#fff;padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;">
-      <!-- NAVIX Logo Circle -->
-      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
-        <span style="font-size:34px;line-height:1;">🧭</span>
-      </div>
-      <div style="font-size:30px;font-weight:900;letter-spacing:5px;margin-bottom:4px;">NAVIX</div>
-      <div style="font-size:12px;opacity:.7;margin-bottom:28px;letter-spacing:1px;">Marketplace · Delivery · Stores</div>
-      <button class="btn" id="splash-btn" style="background:var(--gold);color:#fff;width:200px;font-size:14px;padding:13px 20px;border-radius:30px;font-weight:700;"
+    <div style="text-align:center;color:#fff;padding:20px 24px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;">
+      <div style="font-size:52px;margin-bottom:6px;">🧭</div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:4px;margin-bottom:4px;">NAVIX</div>
+      <div style="font-size:14px;opacity:.75;margin-bottom:28px;">Marketplace · Delivery · Stores</div>
+      <button class="btn" id="splash-btn" style="background:var(--gold);color:#fff;width:220px;font-size:15px;padding:14px 24px;border-radius:30px;font-weight:700;"
         onclick="showScreen('role-select')">
         Get Started
       </button>
-      <div style="margin-top:14px;font-size:11px;opacity:.5;">By continuing you agree to our Terms &amp; Privacy Policy</div>
+      <div style="margin-top:20px;font-size:12px;opacity:.6;">By continuing you agree to our Terms & Privacy Policy</div>
     </div>
   </div>
 
@@ -496,10 +487,10 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; 
       <span class="topbar-title" id="login-title">Customer Login</span>
     </div>
     <div class="content">
-      <div style="text-align:center;margin-bottom:10px;">
-        <div id="login-emoji" style="font-size:30px;line-height:1;">🛍️</div>
-        <div style="font-size:15px;font-weight:700;margin-top:6px;">Welcome back!</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sign in to continue</div>
+      <div style="text-align:center;margin-bottom:14px;">
+        <div id="login-emoji" style="font-size:36px;">🛍️</div>
+        <div style="font-size:16px;font-weight:700;margin-top:8px;">Welcome back!</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px;">Sign in to continue</div>
       </div>
       <div class="form-group">
         <label>Email Address</label>
@@ -562,7 +553,7 @@ hr.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; 
           <span class="topbar-action" onclick="showScreen('cart')" style="color:#fff;position:relative;">
             🛒<span class="cart-badge" id="cart-badge-home">0</span>
           </span>
-          <span style="font-size:22px;cursor:pointer;position:relative;" onclick="showNotifications()">🔔<span id="notif-badge" style="position:absolute;top:-4px;right:-6px;background:var(--danger);color:#fff;font-size:9px;border-radius:10px;padding:1px 4px;display:none;">0</span></span>
+          <span style="font-size:22px;cursor:pointer;" onclick="showScreen('notifications')">🔔</span>
         </div>
       </div>
       <div class="search-wrap">
@@ -957,13 +948,6 @@ let cartItems      = [];
 let selectedPayment= 'Cash on Delivery';
 let unsubListeners = [];
 
-// ─── FIREBASE MESSAGING (Push Notifications) ─────────────────
-const VAPID_KEY = 'BHhMSi-h4GFeOz06QjKwSHrAjGWJjy_CY8MYudzvei4zn9xrt-zn7e6OysynBQIdCJvA8m-ErJ7DmhWh5KxDVfs';
-let messaging = null;
-
-// ─── PAYSTACK CONFIG ──────────────────────────────────────────
-const PAYSTACK_KEY = 'pk_test_69cf95e52fd204069cca94f7b621f7a96a39f872';
-
 const CATEGORIES = ['All','Food','Medicine','Appliances','Mobiles',"Men's Wear","Women's Wear",'Kids','Shoes','Winter','Summer','Electronics','Groceries','Beauty','Others'];
 const CAT_ICONS  = {Food:'🍎',Medicine:'💊',Appliances:'🏠',Mobiles:'📱',"Men's Wear":'👕',"Women's Wear":'👗',Kids:'🧸',Shoes:'👟',Winter:'🧥',Summer:'🩴',Electronics:'💻',Groceries:'🛒',Beauty:'💄',Others:'📦',All:'🗂️'};
 const STATUS_COLOR = {Pending:'badge-gold',Accepted:'badge-blue','Assigned to Rider':'badge-blue','Out for Delivery':'badge-blue',Delivered:'badge-green',Cancelled:'badge-red'};
@@ -991,15 +975,10 @@ function toast(msg) {
 }
 
 function showScreen(name) {
-  // Force hide ALL screens including splash
-  document.querySelectorAll('.screen').forEach(s => {
-    s.classList.remove('active');
-    s.style.display = 'none';
-  });
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   const el = document.getElementById('s-' + name);
   if (el) {
     el.classList.add('active');
-    el.style.display = 'flex';
     el.querySelector('.content')?.scrollTo(0, 0);
   }
   const renderMap = {
@@ -1157,13 +1136,8 @@ auth.onAuthStateChanged(async user => {
       currentUser = { id: user.uid, ...snap.data() };
       currentRole = currentUser.role;
       hideOverlay();
-      // Force hide splash before navigating
-      const splash = document.getElementById('s-splash');
-      if (splash) { splash.classList.remove('active'); splash.style.display = 'none'; }
       const dest = { customer: 'customer-home', merchant: 'merchant-home', rider: 'rider-home' };
       showScreen(dest[currentRole] || 'role-select');
-      // Init push notifications after login
-      initMessaging();
     } catch (e) {
       hideOverlay();
       showScreen('role-select');
@@ -1248,7 +1222,6 @@ async function clearCart() {
 async function renderCustomerHome() {
   document.getElementById('ch-name').textContent = currentUser.name.split(' ')[0];
   await loadCart();
-  loadNotifBadge(); // update notification badge
   const content = document.getElementById('ch-content');
 
   // load products
@@ -1346,7 +1319,7 @@ async function renderProductDetail() {
       ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" onerror="this.outerHTML='<span style=font-size:80px>${p.emoji||'📦'}</span>';">`
       : `<span style="font-size:80px;">${p.emoji || '📦'}</span>`;
     content.innerHTML = `
-      <div style="background:var(--surface);border-radius:14px;height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden;">${img}</div>
+      <div style="background:var(--surface);border-radius:14px;height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden;">${img}</div>
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
         <div style="font-size:18px;font-weight:700;flex:1;padding-right:12px;line-height:1.3;">${p.name}</div>
         <div style="font-size:22px;font-weight:700;color:var(--green);white-space:nowrap;">${fmt(p.price)}</div>
@@ -1446,10 +1419,7 @@ async function renderCheckout() {
       ${payments.map(p => `
         <div class="pay-option ${selectedPayment===p.id?'selected':''}" onclick="selectPayment('${p.id}')">
           <span class="pay-icon">${p.icon}</span>
-          <div style="flex:1;">
-            <div style="font-size:14px;font-weight:500;">${p.label}</div>
-            ${p.id !== 'Cash on Delivery' ? '<div style="font-size:10px;color:var(--muted);">Powered by Paystack 🔒</div>' : ''}
-          </div>
+          <span style="font-size:14px;font-weight:500;">${p.label}</span>
           <div class="pay-radio"></div>
         </div>`).join('')}
     </div>
@@ -1483,52 +1453,17 @@ async function placeOrder() {
   if (cartItems.length === 0) { toast('Cart is empty'); return; }
   const addr = document.getElementById('co-addr')?.value?.trim();
   if (!addr) { toast('Please enter a delivery address'); return; }
-  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
-  const total = subtotal + 500;
-
-  // Cash on Delivery — skip payment gateway
-  if (selectedPayment === 'Cash on Delivery') {
-    await saveOrder(addr, total, 'Pending');
-    return;
-  }
-
-  // Card / Bank Transfer / Wallet — go through Paystack
-  const handler = PaystackPop.setup({
-    key:       PAYSTACK_KEY,
-    email:     currentUser.email,
-    amount:    total * 100, // Paystack uses kobo
-    currency:  'NGN',
-    ref:       'NAVIX_' + Date.now(),
-    metadata: {
-      custom_fields: [
-        { display_name: 'Customer Name',  variable_name: 'customer_name',  value: currentUser.name },
-        { display_name: 'Phone Number',   variable_name: 'phone',          value: currentUser.phone || '' },
-        { display_name: 'Payment Method', variable_name: 'payment_method', value: selectedPayment },
-      ]
-    },
-    callback: async function(response) {
-      // Payment successful
-      await saveOrder(addr, total, 'Paid', response.reference);
-    },
-    onClose: function() {
-      toast('Payment cancelled');
-    }
-  });
-  handler.openIframe();
-}
-
-async function saveOrder(addr, total, paymentStatus, paystackRef) {
   showOverlay('Placing your order…');
   try {
+    const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
     const order = {
       customerId:      currentUser.id,
       customerName:    currentUser.name,
       customerPhone:   currentUser.phone || '',
       customerAddress: addr,
-      totalAmount:     total,
+      totalAmount:     subtotal + 500,
       paymentMethod:   selectedPayment,
-      paymentStatus:   paymentStatus,
-      paystackRef:     paystackRef || null,
+      paymentStatus:   'Pending',
       orderStatus:     'Pending',
       riderId:         null,
       riderName:       null,
@@ -1547,8 +1482,6 @@ async function saveOrder(addr, total, paymentStatus, paystackRef) {
     selectedOrder = ref.id;
     hideOverlay();
     toast('Order placed successfully! 🎉');
-    // Notify merchants
-    await notifyMerchants({ ...order, items: cartItems.map(i => ({ merchantId: i.merchantId })) });
     showScreen('order-tracking');
   } catch (e) {
     hideOverlay();
@@ -1905,17 +1838,6 @@ async function merchantUpdateOrder(oid, status) {
   showOverlay('Updating order…');
   try {
     await db.collection('orders').doc(oid).update({ orderStatus: status });
-    // Notify customer
-    const oSnap = await db.collection('orders').doc(oid).get();
-    if (oSnap.exists) {
-      const o = oSnap.data();
-      if (status === 'Accepted') {
-        await notifyCustomer(o.customerId, '✅ Order Accepted!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been accepted by the merchant.');
-        await notifyRiders('🚚 New Delivery Available!', 'A new order is ready for pickup — ' + fmt(o.totalAmount));
-      } else if (status === 'Cancelled') {
-        await notifyCustomer(o.customerId, '❌ Order Cancelled', 'Your order #' + oid.slice(-6).toUpperCase() + ' was cancelled by the merchant.');
-      }
-    }
     hideOverlay(); toast('Order ' + status.toLowerCase());
     renderMerchantOrders();
   } catch (e) { hideOverlay(); toast('Failed to update order'); }
@@ -2088,16 +2010,6 @@ async function riderUpdateOrder(oid, status) {
     const update = { orderStatus: status };
     if (status === 'Delivered') update.deliveredAt = ts();
     await db.collection('orders').doc(oid).update(update);
-    // Notify customer
-    const oSnap = await db.collection('orders').doc(oid).get();
-    if (oSnap.exists) {
-      const o = oSnap.data();
-      if (status === 'Out for Delivery') {
-        await notifyCustomer(o.customerId, '🏍️ Order Out for Delivery!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been picked up and is on its way!');
-      } else if (status === 'Delivered') {
-        await notifyCustomer(o.customerId, '🎉 Order Delivered!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been delivered. Enjoy!');
-      }
-    }
     hideOverlay();
     toast(status === 'Delivered' ? '🎉 Delivery completed!' : '📦 Marked as picked up');
     renderRiderAccepted();
@@ -2193,156 +2105,8 @@ async function saveRiderProfile() {
   } catch (e) { hideOverlay(); toast('Failed to save'); }
 }
 
-// ─── NOTIFICATIONS UI ─────────────────────────────────────────
-async function showNotifications() {
-  try {
-    const snap = await db.collection('notifications')
-      .where('userId','==',currentUser.id)
-      .orderBy('createdAt','desc')
-      .limit(20)
-      .get();
-    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-    // Mark all as read
-    const batch = db.batch();
-    notifs.filter(n => !n.read).forEach(n => {
-      batch.update(db.collection('notifications').doc(n.id), { read: true });
-    });
-    await batch.commit();
-
-    // Update badge
-    updateNotifBadge(0);
-
-    // Show in a nice popup
-    const existing = document.getElementById('notif-panel');
-    if (existing) existing.remove();
-
-    const panel = document.createElement('div');
-    panel.id = 'notif-panel';
-    panel.style.cssText = 'position:absolute;top:54px;right:0;left:0;bottom:0;background:var(--white);z-index:9990;display:flex;flex-direction:column;';
-    panel.innerHTML = `
-      <div style="background:var(--green);color:#fff;padding:0 16px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
-        <span style="cursor:pointer;font-size:20px;" onclick="document.getElementById('notif-panel').remove()">←</span>
-        <span style="font-size:15px;font-weight:600;">Notifications</span>
-      </div>
-      <div style="flex:1;overflow-y:auto;padding:12px;">
-        ${notifs.length === 0
-          ? `<div class="empty-state"><span class="empty-icon">🔔</span><div class="empty-title">No notifications yet</div><div class="empty-sub">You'll see order updates here</div></div>`
-          : notifs.map(n => `
-            <div class="card" style="border-left:3px solid ${n.read ? 'var(--border)' : 'var(--green)'};">
-              <div style="font-weight:${n.read ? '400' : '700'};font-size:14px;">${n.title}</div>
-              <div style="font-size:13px;color:var(--muted);margin-top:3px;">${n.body}</div>
-              <div style="font-size:11px;color:var(--muted);margin-top:4px;">${n.createdAt?.toDate?.()?.toLocaleString?.() || ''}</div>
-            </div>`).join('')}
-      </div>`;
-    document.getElementById('app').appendChild(panel);
-  } catch(e) {
-    toast('Could not load notifications');
-  }
-}
-
-async function loadNotifBadge() {
-  if (!currentUser) return;
-  try {
-    const snap = await db.collection('notifications')
-      .where('userId','==',currentUser.id)
-      .where('read','==',false)
-      .get();
-    updateNotifBadge(snap.size);
-  } catch(e) {}
-}
-
-function updateNotifBadge(count) {
-  const badge = document.getElementById('notif-badge');
-  if (!badge) return;
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'block' : 'none';
-}
-
-// ─── PUSH NOTIFICATIONS ───────────────────────────────────────
-async function initMessaging() {
-  try {
-    messaging = firebase.messaging();
-    const permission = await Notification.requestPermission();
-    if (permission !== 'granted') {
-      console.log('Notification permission denied');
-      return;
-    }
-    const token = await messaging.getToken({ vapidKey: VAPID_KEY });
-    if (token && currentUser) {
-      // Save FCM token to user's Firestore document
-      await db.collection('users').doc(currentUser.id).update({ fcmToken: token });
-      console.log('FCM token saved');
-    }
-    // Handle foreground messages
-    messaging.onMessage((payload) => {
-      const { title, body } = payload.notification || {};
-      toast('🔔 ' + (title || 'NAVIX') + ': ' + (body || ''));
-      // Show browser notification if app is in foreground
-      if (Notification.permission === 'granted') {
-        new Notification(title || 'NAVIX', {
-          body: body || '',
-          icon: 'https://navix-ng.vercel.app/icon.png',
-          badge: 'https://navix-ng.vercel.app/icon.png',
-        });
-      }
-    });
-  } catch (e) {
-    console.log('Messaging init error:', e.message);
-  }
-}
-
-async function sendNotificationToUser(userId, title, body) {
-  try {
-    // Save notification to Firestore — your Cloud Function will pick it up
-    await db.collection('notifications').add({
-      userId,
-      title,
-      body,
-      read: false,
-      createdAt: ts(),
-    });
-  } catch (e) {
-    console.log('Notification save error:', e.message);
-  }
-}
-
-async function notifyMerchants(order) {
-  // Find all merchants in this order and notify them
-  const merchantIds = [...new Set((order.items || []).map(i => i.merchantId).filter(Boolean))];
-  for (const mid of merchantIds) {
-    await sendNotificationToUser(
-      mid,
-      '🛍️ New Order Received!',
-      `${order.customerName} ordered ${order.items.length} item(s) — ${fmt(order.totalAmount)}`
-    );
-  }
-}
-
-async function notifyCustomer(customerId, title, body) {
-  await sendNotificationToUser(customerId, title, body);
-}
-
-async function notifyRiders(title, body) {
-  // Notify all available riders
-  try {
-    const snap = await db.collection('users').where('role','==','rider').where('available','==',true).get();
-    for (const doc of snap.docs) {
-      await sendNotificationToUser(doc.id, title, body);
-    }
-  } catch(e) {
-    console.log('Rider notification error:', e);
-  }
-}
-
 // ─── INIT ──────────────────────────────────────────────────────
 window.addEventListener('load', () => {
-  // Register Firebase messaging service worker
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/firebase-messaging-sw.js')
-      .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.log('SW registration failed:', err));
-  }
   renderRegisterExtra();
   // Check if Firebase config is set
   if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
