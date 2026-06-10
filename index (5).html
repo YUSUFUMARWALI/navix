@@ -1,0 +1,2361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>NAVIX — Marketplace & Delivery</title>
+
+<!-- Firebase Messaging SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js"></script>
+
+<!-- Paystack SDK -->
+<script src="https://js.paystack.co/v1/inline.js"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+<style>
+/* ─── RESET & BASE ─────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #F0F6F2;
+  color: #1A2E24;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ─── COLOR TOKENS ─────────────────────────────── */
+:root {
+  --green:       #1A7A4A;
+  --green-dark:  #145E39;
+  --green-mid:   #2E9D62;
+  --green-light: #E8F5EE;
+  --gold:        #C9920A;
+  --gold-light:  #FDF3D9;
+  --gold-mid:    #E5A80F;
+  --white:       #FFFFFF;
+  --surface:     #F7FAF8;
+  --border:      #D1E8DA;
+  --text:        #1A2E24;
+  --muted:       #5A7A68;
+  --danger:      #C0392B;
+  --danger-light:#FDECEA;
+  --info:        #1A5F8A;
+  --info-light:  #E6F0FA;
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+}
+
+/* ─── APP SHELL ─────────────────────────────────── */
+#app {
+  width: 100%;
+  max-width: 480px;
+  height: 100vh;
+  margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: 0 0 40px rgba(0,0,0,.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ─── SCREENS ───────────────────────────────────── */
+.screen {
+  display: none !important;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+.screen.active { display: flex !important; }
+
+/* ─── TOP BAR ───────────────────────────────────── */
+.topbar {
+  background: var(--green);
+  color: #fff;
+  padding: 0 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 10;
+}
+.topbar-title { flex: 1; font-size: 16px; font-weight: 600; }
+.topbar-back  { cursor: pointer; font-size: 22px; line-height: 1; }
+.topbar-action{ cursor: pointer; font-size: 22px; position: relative; }
+.cart-badge {
+  position: absolute; top: -5px; right: -7px;
+  background: var(--gold); color: #fff;
+  font-size: 9px; border-radius: 10px; padding: 1px 5px;
+  font-weight: 700; min-width: 16px; text-align: center;
+}
+
+/* ─── SCROLLABLE CONTENT ────────────────────────── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 12px;
+}
+
+/* ─── BOTTOM NAV ────────────────────────────────── */
+.botbar {
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-shrink: 0;
+  height: 52px;
+}
+.botbar-btn {
+  flex: 1; border: none; background: none; cursor: pointer;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 3px;
+  font-size: 10px; color: var(--muted);
+  transition: color .15s;
+}
+.botbar-btn.active { color: var(--green); }
+.botbar-btn svg { width: 22px; height: 22px; }
+
+/* ─── BUTTONS ───────────────────────────────────── */
+.btn {
+  display: block; width: 100%; padding: 13px 16px;
+  border-radius: var(--radius-sm); border: none;
+  cursor: pointer; font-size: 14px; font-weight: 600;
+  text-align: center; transition: opacity .15s, transform .1s;
+  font-family: inherit; letter-spacing: .2px;
+}
+.btn:active { transform: scale(.98); opacity: .9; }
+.btn-primary { background: var(--green); color: #fff; }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-gold    { background: var(--gold);  color: #fff; }
+.btn-outline { background: transparent; border: 1.5px solid var(--green); color: var(--green); }
+.btn-danger  { background: var(--danger); color: #fff; }
+.btn-ghost   { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn-sm      { padding: 8px 14px; font-size: 13px; width: auto; display: inline-block; border-radius: 8px; }
+.btn + .btn  { margin-top: 10px; }
+
+/* ─── FORM ELEMENTS ─────────────────────────────── */
+.form-group { margin-bottom: 10px; }
+.form-group label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 5px; font-weight: 500; }
+input[type=text], input[type=email], input[type=password],
+input[type=tel], input[type=number], select, textarea {
+  width: 100%; padding: 9px 11px;
+  border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+  font-size: 14px; background: var(--white); color: var(--text);
+  font-family: inherit; transition: border-color .2s;
+  -webkit-appearance: none; appearance: none;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none; border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(26,122,74,.1);
+}
+textarea { resize: vertical; min-height: 80px; }
+select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235A7A68' stroke-width='1.5' fill='none'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
+
+/* ─── CARDS ─────────────────────────────────────── */
+.card {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 11px 14px;
+  margin-bottom: 12px;
+}
+.card-row { display: flex; justify-content: space-between; align-items: center; }
+
+/* ─── BADGES ─────────────────────────────────────── */
+.badge {
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; display: inline-block;
+}
+.badge-green  { background: var(--green-light); color: var(--green); }
+.badge-gold   { background: var(--gold-light);  color: var(--gold);  }
+.badge-red    { background: var(--danger-light); color: var(--danger); }
+.badge-blue   { background: var(--info-light);   color: var(--info);   }
+.badge-gray   { background: #F0F0F0; color: #555; }
+
+/* ─── STAT GRID ──────────────────────────────────── */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 10px 8px; text-align: center;
+}
+.stat-num  { font-size: 20px; font-weight: 700; color: var(--green); }
+.stat-lbl  { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* ─── PRODUCT GRID ───────────────────────────────── */
+.product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.product-card {
+  background: var(--white); border: 1px solid var(--border);
+  border-radius: var(--radius-md); overflow: hidden; cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+}
+.product-card:active { transform: scale(.97); }
+.product-img {
+  height: 90px; background: var(--surface);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 40px;
+}
+.product-img img { width: 100%; height: 100%; object-fit: cover; }
+.product-info { padding: 10px; }
+.product-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; line-height: 1.3; }
+.product-price{ color: var(--green); font-weight: 700; font-size: 14px; }
+.product-seller{ font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ─── SEARCH BAR ─────────────────────────────────── */
+.search-wrap {
+  display: flex; align-items: center;
+  background: rgba(255,255,255,.18); border: 1px solid rgba(255,255,255,.3);
+  border-radius: 10px; padding: 9px 12px; gap: 8px; margin-top: 12px;
+}
+.search-wrap input {
+  border: none; background: transparent; color: #fff; flex: 1;
+  font-size: 14px; box-shadow: none;
+}
+.search-wrap input::placeholder { color: rgba(255,255,255,.65); }
+.search-wrap input:focus { box-shadow: none; border: none; }
+.search-icon { color: rgba(255,255,255,.8); font-size: 18px; }
+
+/* ─── CATEGORIES CHIPS ───────────────────────────── */
+.cats {
+  display: flex; gap: 8px; overflow-x: auto;
+  padding-bottom: 4px; scrollbar-width: none;
+}
+.cats::-webkit-scrollbar { display: none; }
+.chip {
+  padding: 6px 14px; border-radius: 20px;
+  border: 1.5px solid var(--border); background: var(--white);
+  font-size: 12px; font-weight: 500; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0; color: var(--muted);
+  transition: all .15s;
+}
+.chip.active { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* ─── STATUS TRACKER ─────────────────────────────── */
+.status-steps { padding: 4px 0; }
+.status-step  { display: flex; align-items: flex-start; gap: 12px; }
+.status-left  { display: flex; flex-direction: column; align-items: center; }
+.status-dot   { width: 14px; height: 14px; border-radius: 50%; background: var(--border); flex-shrink: 0; margin-top: 3px; }
+.status-dot.done   { background: var(--green); }
+.status-dot.active { background: var(--gold); box-shadow: 0 0 0 4px var(--gold-light); }
+.status-line  { width: 2px; flex: 1; min-height: 24px; background: var(--border); }
+.status-line.done  { background: var(--green); }
+.status-body  { flex: 1; padding-bottom: 20px; }
+.status-label { font-size: 14px; font-weight: 500; }
+.status-sub   { font-size: 12px; color: var(--muted); margin-top: 2px; }
+.status-sub.gold { color: var(--gold); font-weight: 500; }
+
+/* ─── TOAST ──────────────────────────────────────── */
+.toast {
+  position: absolute; bottom: 70px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #1A2E24; color: #fff;
+  padding: 10px 20px; border-radius: 24px;
+  font-size: 13px; font-weight: 500;
+  white-space: nowrap; max-width: 90%;
+  opacity: 0; transition: opacity .25s, transform .25s;
+  pointer-events: none; z-index: 9999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── NOTICE / ALERT BAR ─────────────────────────── */
+.notice {
+  background: var(--gold-light); border-left: 3px solid var(--gold);
+  padding: 8px 10px; border-radius: 0 8px 8px 0;
+  margin-bottom: 14px; font-size: 13px; line-height: 1.5;
+}
+.notice-info {
+  background: var(--info-light); border-left-color: var(--info);
+}
+
+/* ─── EMPTY STATE ────────────────────────────────── */
+.empty-state {
+  text-align: center; padding: 48px 20px; color: var(--muted);
+}
+.empty-icon { font-size: 52px; margin-bottom: 12px; display: block; opacity: .5; }
+.empty-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+.empty-sub   { font-size: 13px; margin-bottom: 20px; }
+
+/* ─── LOADER ─────────────────────────────────────── */
+.loader-wrap {
+  display: flex; align-items: center; justify-content: center;
+  padding: 40px 20px; flex-direction: column; gap: 12px;
+}
+.spinner {
+  width: 36px; height: 36px; border: 3px solid var(--border);
+  border-top-color: var(--green); border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── IMAGE UPLOAD PREVIEW ───────────────────────── */
+.img-preview {
+  width: 100%; height: 160px; border-radius: var(--radius-sm);
+  border: 2px dashed var(--border); display: flex;
+  align-items: center; justify-content: center;
+  cursor: pointer; overflow: hidden; margin-bottom: 12px;
+  background: var(--surface); transition: border-color .2s;
+}
+.img-preview:hover { border-color: var(--green); }
+.img-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+/* ─── ROLE CARDS ─────────────────────────────────── */
+.role-card {
+  border: 2px solid var(--border); border-radius: 14px;
+  padding: 12px; text-align: center; cursor: pointer;
+  margin-bottom: 8px; background: var(--white);
+  transition: border-color .2s, background .2s;
+}
+.role-card:hover, .role-card.selected {
+  border-color: var(--green); background: var(--green-light);
+}
+.role-icon  { font-size: 30px; margin-bottom: 3px; }
+.role-title { font-weight: 700; font-size: 14px; }
+.role-desc  { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ─── AVATAR ─────────────────────────────────────── */
+.avatar {
+  border-radius: 50%; display: flex;
+  align-items: center; justify-content: center;
+  font-weight: 700; font-size: 20px; flex-shrink: 0;
+}
+
+/* ─── HERO STRIP ─────────────────────────────────── */
+.hero {
+  background: var(--green);
+  padding: 10px 14px 14px;
+  color: #fff; flex-shrink: 0;
+}
+
+/* ─── QTY STEPPER ────────────────────────────────── */
+.qty-stepper { display: flex; align-items: center; gap: 10px; }
+.qty-btn {
+  width: 30px; height: 30px; border-radius: 8px;
+  border: 1.5px solid var(--border); background: var(--surface);
+  font-size: 18px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-weight: 700;
+  color: var(--green);
+}
+
+/* ─── DIVIDER ────────────────────────────────────── */
+hr.divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+
+/* ─── SWITCH ─────────────────────────────────────── */
+.switch-wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 0;
+}
+.switch {
+  position: relative; width: 44px; height: 24px;
+  display: inline-block;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch-slider {
+  position: absolute; inset: 0; cursor: pointer;
+  background: var(--border); border-radius: 24px;
+  transition: background .2s;
+}
+.switch-slider::before {
+  content: ''; position: absolute;
+  width: 18px; height: 18px; left: 3px; bottom: 3px;
+  background: #fff; border-radius: 50%; transition: transform .2s;
+}
+.switch input:checked + .switch-slider { background: var(--green); }
+.switch input:checked + .switch-slider::before { transform: translateX(20px); }
+
+/* ─── PAYMENT OPTION ─────────────────────────────── */
+.pay-option {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer;
+  margin-bottom: 8px; transition: border-color .2s, background .2s;
+}
+.pay-option.selected { border-color: var(--green); background: var(--green-light); }
+.pay-icon { font-size: 22px; }
+.pay-radio {
+  width: 18px; height: 18px; border-radius: 50%;
+  border: 2px solid var(--border); margin-left: auto;
+  display: flex; align-items: center; justify-content: center;
+  transition: border-color .2s;
+}
+.pay-option.selected .pay-radio {
+  border-color: var(--green);
+  background: radial-gradient(circle, var(--green) 50%, transparent 55%);
+}
+
+/* ─── SECTION HEADING ────────────────────────────── */
+.sec-head {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 12px;
+}
+.sec-title { font-size: 15px; font-weight: 700; }
+.sec-link  { font-size: 13px; color: var(--green); font-weight: 500; cursor: pointer; }
+
+/* ─── RIDER ORDER CARD ───────────────────────────── */
+.delivery-card {
+  border-radius: var(--radius-md); border: 1px solid var(--border);
+  background: var(--white); padding: 14px; margin-bottom: 12px;
+  border-left: 4px solid var(--green);
+}
+.delivery-card.gold-left { border-left-color: var(--gold); }
+
+/* ─── OVERLAY LOADER ─────────────────────────────── */
+#overlay {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,.85);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 9998; flex-direction: column; gap: 12px;
+}
+#overlay.hidden { display: none; }
+#overlay-text { font-size: 14px; color: var(--muted); font-weight: 500; }
+
+/* ─── SPLASH ─────────────────────────────────────── */
+#s-splash {
+  background: var(--green);
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Overlay loader -->
+  <div id="overlay">
+    <div class="spinner"></div>
+    <div id="overlay-text">Loading NAVIX…</div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  SPLASH                                         -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-splash" class="screen active">
+    <div style="text-align:center;color:#fff;padding:16px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;">
+      <!-- NAVIX Logo Circle -->
+      <div style="width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;margin-bottom:12px;">
+        <span style="font-size:34px;line-height:1;">🧭</span>
+      </div>
+      <div style="font-size:30px;font-weight:900;letter-spacing:5px;margin-bottom:4px;">NAVIX</div>
+      <div style="font-size:12px;opacity:.7;margin-bottom:28px;letter-spacing:1px;">Marketplace · Delivery · Stores</div>
+      <button class="btn" id="splash-btn" style="background:var(--gold);color:#fff;width:200px;font-size:14px;padding:13px 20px;border-radius:30px;font-weight:700;"
+        onclick="showScreen('role-select')">
+        Get Started
+      </button>
+      <div style="margin-top:14px;font-size:11px;opacity:.5;">By continuing you agree to our Terms &amp; Privacy Policy</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  ROLE SELECT                                    -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-role-select" class="screen">
+    <div class="topbar" style="justify-content:center;">
+      <span style="font-size:20px;">🧭</span>
+      <span class="topbar-title" style="text-align:center;">Choose Your Role</span>
+    </div>
+    <div class="content">
+      <p style="font-size:14px;color:var(--muted);margin-bottom:12px;">How will you use NAVIX today?</p>
+      <div class="role-card selected" id="rc-customer" onclick="selectRole('customer')">
+        <div class="role-icon">🛍️</div>
+        <div class="role-title">Customer</div>
+        <div class="role-desc">Browse products & place orders</div>
+      </div>
+      <div class="role-card" id="rc-merchant" onclick="selectRole('merchant')">
+        <div class="role-icon">🏪</div>
+        <div class="role-title">Merchant</div>
+        <div class="role-desc">Sell products & manage your store</div>
+      </div>
+      <div class="role-card" id="rc-rider" onclick="selectRole('rider')">
+        <div class="role-icon">🏍️</div>
+        <div class="role-title">Rider</div>
+        <div class="role-desc">Deliver orders & earn money</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px;">
+        <button class="btn btn-outline" style="flex:1;" onclick="showScreen('login')">Login</button>
+        <button class="btn btn-primary" style="flex:1;" onclick="showScreen('register')">Register</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  LOGIN                                          -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-login" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('role-select')">←</span>
+      <span class="topbar-title" id="login-title">Customer Login</span>
+    </div>
+    <div class="content">
+      <div style="text-align:center;margin-bottom:10px;">
+        <div id="login-emoji" style="font-size:30px;line-height:1;">🛍️</div>
+        <div style="font-size:15px;font-weight:700;margin-top:6px;">Welcome back!</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sign in to continue</div>
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="l-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="l-pass" placeholder="Your password" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" id="login-btn" onclick="doLogin()">Login</button>
+      <button class="btn btn-outline" onclick="showScreen('register')">New user? Register here</button>
+      <div style="text-align:center;margin-top:16px;">
+        <a href="#" id="forgot-link" style="font-size:13px;color:var(--green);" onclick="doForgotPassword(); return false;">Forgot password?</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  REGISTER                                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-register" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('role-select')">←</span>
+      <span class="topbar-title" id="register-title">Customer Register</span>
+    </div>
+    <div class="content">
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="r-name" placeholder="Your full name" autocomplete="name">
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="r-email" placeholder="your@email.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="r-pass" placeholder="Min 6 characters" autocomplete="new-password">
+      </div>
+      <div class="form-group">
+        <label>Phone Number</label>
+        <input type="tel" id="r-phone" placeholder="e.g. 08012345678">
+      </div>
+      <div id="r-extra"></div>
+      <button class="btn btn-primary" onclick="doRegister()">Create Account</button>
+      <button class="btn btn-outline" onclick="showScreen('login')">Already have an account? Login</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  CUSTOMER HOME                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-customer-home" class="screen">
+    <div class="hero">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:13px;opacity:.8;">Good day,</div>
+          <div style="font-size:17px;font-weight:700;" id="ch-name">Customer</div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+          <span class="topbar-action" onclick="showScreen('cart')" style="color:#fff;position:relative;">
+            🛒<span class="cart-badge" id="cart-badge-home">0</span>
+          </span>
+          <span style="font-size:22px;cursor:pointer;position:relative;" onclick="showNotifications()">🔔<span id="notif-badge" style="position:absolute;top:-4px;right:-6px;background:var(--danger);color:#fff;font-size:9px;border-radius:10px;padding:1px 4px;display:none;">0</span></span>
+        </div>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input id="ch-search" type="text" placeholder="Search products, stores…" oninput="handleSearch(this.value)">
+      </div>
+    </div>
+    <div class="content" id="ch-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn active" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('customer-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  PRODUCT LIST (Browse All)                      -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-product-list" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('customer-home')">←</span>
+      <span class="topbar-title">All Products</span>
+      <span class="topbar-action" onclick="showScreen('cart')" style="color:#fff;position:relative;">
+        🛒<span class="cart-badge" id="cart-badge-pl">0</span>
+      </span>
+    </div>
+    <div style="background:var(--white);padding:10px 16px 0;border-bottom:1px solid var(--border);flex-shrink:0;">
+      <div style="display:flex;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 12px;gap:8px;margin-bottom:10px;">
+        <span style="font-size:16px;">🔍</span>
+        <input type="text" id="pl-search" placeholder="Search products…" style="border:none;background:transparent;flex:1;font-size:14px;box-shadow:none;" oninput="handleSearch(this.value)">
+      </div>
+      <div class="cats" id="pl-cats"></div>
+    </div>
+    <div class="content" id="pl-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn active" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('customer-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  PRODUCT DETAIL                                 -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-product-detail" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" id="pd-back">←</span>
+      <span class="topbar-title">Product Details</span>
+      <span class="topbar-action" onclick="showScreen('cart')" style="color:#fff;position:relative;">
+        🛒<span class="cart-badge" id="cart-badge-pd">0</span>
+      </span>
+    </div>
+    <div class="content" id="pd-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  CART                                           -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-cart" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" id="cart-back">←</span>
+      <span class="topbar-title" id="cart-title">My Cart</span>
+    </div>
+    <div class="content" id="cart-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn active" onclick="showScreen('cart')">🛒<span>Cart</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  CHECKOUT                                       -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-checkout" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('cart')">←</span>
+      <span class="topbar-title">Checkout</span>
+    </div>
+    <div class="content" id="checkout-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  ORDER TRACKING                                 -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-order-tracking" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('order-history')">←</span>
+      <span class="topbar-title">Track Order</span>
+    </div>
+    <div class="content" id="ot-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn active" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('customer-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  ORDER HISTORY                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-order-history" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('customer-home')">←</span>
+      <span class="topbar-title">My Orders</span>
+    </div>
+    <div class="content" id="oh-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn active" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('customer-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  CUSTOMER PROFILE                               -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-customer-profile" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('customer-home')">←</span>
+      <span class="topbar-title">My Profile</span>
+    </div>
+    <div class="content" id="cp-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('customer-home')">🏠<span>Home</span></button>
+      <button class="botbar-btn" onclick="showScreen('product-list')">🗂️<span>Browse</span></button>
+      <button class="botbar-btn" onclick="showScreen('order-history')">📦<span>Orders</span></button>
+      <button class="botbar-btn active" onclick="showScreen('customer-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  MERCHANT HOME                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-merchant-home" class="screen">
+    <div class="topbar">
+      <span style="font-size:20px;">🏪</span>
+      <span class="topbar-title" id="mh-store-name">My Store</span>
+      <span class="topbar-action" onclick="showScreen('merchant-profile')" style="color:#fff;">👤</span>
+    </div>
+    <div class="content" id="mh-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn active" onclick="showScreen('merchant-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-products')">📦<span>Products</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-orders')">📋<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ADD PRODUCT -->
+  <div id="s-add-product" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('merchant-products')">←</span>
+      <span class="topbar-title">Add Product</span>
+    </div>
+    <div class="content" id="ap-content">
+      <div id="ap-img-preview" class="img-preview" onclick="document.getElementById('ap-file').click()">
+        <div style="text-align:center;color:var(--muted);">
+          <div style="font-size:36px;">📷</div>
+          <div style="font-size:13px;margin-top:6px;">Tap to upload image</div>
+        </div>
+      </div>
+      <input type="file" id="ap-file" accept="image/*" style="display:none;" onchange="previewImage(this,'ap-img-preview','ap-img-data')">
+      <input type="hidden" id="ap-img-data">
+      <div class="form-group"><label>Product Name *</label><input type="text" id="ap-name" placeholder="e.g. Samsung Galaxy S24"></div>
+      <div class="form-group"><label>Description *</label><textarea id="ap-desc" placeholder="Describe your product…"></textarea></div>
+      <div class="form-group"><label>Price (₦) *</label><input type="number" id="ap-price" placeholder="e.g. 150000" min="0"></div>
+      <div class="form-group">
+        <label>Category *</label>
+        <select id="ap-cat">
+          <option value="">Select category</option>
+          <option>Food</option><option>Medicine</option><option>Appliances</option>
+          <option>Mobiles</option><option>Men's Wear</option><option>Women's Wear</option>
+          <option>Kids</option><option>Shoes</option><option>Winter</option>
+          <option>Summer</option><option>Electronics</option><option>Groceries</option>
+          <option>Beauty</option><option>Others</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Stock Quantity *</label><input type="number" id="ap-stock" placeholder="e.g. 50" min="0"></div>
+      <div class="form-group">
+        <label>Delivery Available?</label>
+        <select id="ap-delivery"><option value="true">Yes</option><option value="false">No</option></select>
+      </div>
+      <button class="btn btn-primary" onclick="saveProduct(false)">Add Product</button>
+    </div>
+  </div>
+
+  <!-- MERCHANT PRODUCTS -->
+  <div id="s-merchant-products" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('merchant-home')">←</span>
+      <span class="topbar-title" id="mp-title">My Products</span>
+      <span class="topbar-action" style="color:#fff;" onclick="showScreen('add-product')">＋</span>
+    </div>
+    <div class="content" id="mp-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('merchant-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn active" onclick="showScreen('merchant-products')">📦<span>Products</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-orders')">📋<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- EDIT PRODUCT -->
+  <div id="s-edit-product" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('merchant-products')">←</span>
+      <span class="topbar-title">Edit Product</span>
+    </div>
+    <div class="content" id="ep-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+  </div>
+
+  <!-- MERCHANT ORDERS -->
+  <div id="s-merchant-orders" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('merchant-home')">←</span>
+      <span class="topbar-title">Manage Orders</span>
+    </div>
+    <div class="content" id="mo-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('merchant-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-products')">📦<span>Products</span></button>
+      <button class="botbar-btn active" onclick="showScreen('merchant-orders')">📋<span>Orders</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- MERCHANT PROFILE -->
+  <div id="s-merchant-profile" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('merchant-home')">←</span>
+      <span class="topbar-title">Store Profile</span>
+    </div>
+    <div class="content" id="mprof-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('merchant-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-products')">📦<span>Products</span></button>
+      <button class="botbar-btn" onclick="showScreen('merchant-orders')">📋<span>Orders</span></button>
+      <button class="botbar-btn active" onclick="showScreen('merchant-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ -->
+  <!--  RIDER SCREENS                                  -->
+  <!-- ═══════════════════════════════════════════════ -->
+  <div id="s-rider-home" class="screen">
+    <div class="topbar">
+      <span style="font-size:20px;">🏍️</span>
+      <span class="topbar-title" id="rh-name">Rider Dashboard</span>
+      <span class="topbar-action" onclick="showScreen('rider-profile')" style="color:#fff;">👤</span>
+    </div>
+    <div class="content" id="rh-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn active" onclick="showScreen('rider-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-available')">📍<span>Available</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-accepted')">🚚<span>Active</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <div id="s-rider-available" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('rider-home')">←</span>
+      <span class="topbar-title" id="ra-title">Available Deliveries</span>
+    </div>
+    <div class="content" id="ra-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('rider-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn active" onclick="showScreen('rider-available')">📍<span>Available</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-accepted')">🚚<span>Active</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <div id="s-rider-accepted" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('rider-home')">←</span>
+      <span class="topbar-title" id="rac-title">Active Deliveries</span>
+    </div>
+    <div class="content" id="rac-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('rider-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-available')">📍<span>Available</span></button>
+      <button class="botbar-btn active" onclick="showScreen('rider-accepted')">🚚<span>Active</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+  <div id="s-rider-history" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('rider-home')">←</span>
+      <span class="topbar-title">Delivery History</span>
+    </div>
+    <div class="content" id="rhistory-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('rider-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-available')">📍<span>Available</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-accepted')">🚚<span>Active</span></button>
+      <button class="botbar-btn active" onclick="showScreen('rider-profile')">👤<span>History</span></button>
+    </div>
+  </div>
+
+  <div id="s-rider-profile" class="screen">
+    <div class="topbar">
+      <span class="topbar-back" onclick="showScreen('rider-home')">←</span>
+      <span class="topbar-title">Rider Profile</span>
+    </div>
+    <div class="content" id="rprof-content">
+      <div class="loader-wrap"><div class="spinner"></div></div>
+    </div>
+    <div class="botbar">
+      <button class="botbar-btn" onclick="showScreen('rider-home')">🏠<span>Dashboard</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-available')">📍<span>Available</span></button>
+      <button class="botbar-btn" onclick="showScreen('rider-accepted')">🚚<span>Active</span></button>
+      <button class="botbar-btn active" onclick="showScreen('rider-profile')">👤<span>Profile</span></button>
+    </div>
+  </div>
+
+</div><!-- /#app -->
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!--  JAVASCRIPT                                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script>
+// ─── FIREBASE CONFIG ──────────────────────────────────────────
+// ⚠️  REPLACE THIS WITH YOUR FIREBASE CONFIG FROM THE CONSOLE ⚠️
+// Go to: console.firebase.google.com → Project Settings → Your apps → Web app
+const firebaseConfig = {
+  apiKey:            "AIzaSyDpX0oR-7EeXht0kk1Wdu-cqmB6OM4e40c",
+  authDomain:        "wali-7847f.firebaseapp.com",
+  projectId:         "wali-7847f",
+  storageBucket:     "wali-7847f.firebasestorage.app",
+  messagingSenderId: "352768967123",
+  appId:             "1:352768967123:web:81156c470ad2ac00f7ef26",
+  measurementId:     "G-SXFL104GXK"
+};
+
+// Initialize Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+const storage = firebase.storage();
+
+// ─── APP STATE ─────────────────────────────────────────────────
+let currentUser    = null;
+let currentRole    = 'customer';
+let selectedProduct= null;
+let selectedOrder  = null;
+let editingProduct = null;
+let selectedCategory = 'All';
+let searchQuery    = '';
+let cartItems      = [];
+let selectedPayment= 'Cash on Delivery';
+let unsubListeners = [];
+
+// ─── FIREBASE MESSAGING (Push Notifications) ─────────────────
+const VAPID_KEY = 'BHhMSi-h4GFeOz06QjKwSHrAjGWJjy_CY8MYudzvei4zn9xrt-zn7e6OysynBQIdCJvA8m-ErJ7DmhWh5KxDVfs';
+let messaging = null;
+
+// ─── PAYSTACK CONFIG ──────────────────────────────────────────
+const PAYSTACK_KEY = 'pk_test_69cf95e52fd204069cca94f7b621f7a96a39f872';
+
+const CATEGORIES = ['All','Food','Medicine','Appliances','Mobiles',"Men's Wear","Women's Wear",'Kids','Shoes','Winter','Summer','Electronics','Groceries','Beauty','Others'];
+const CAT_ICONS  = {Food:'🍎',Medicine:'💊',Appliances:'🏠',Mobiles:'📱',"Men's Wear":'👕',"Women's Wear":'👗',Kids:'🧸',Shoes:'👟',Winter:'🧥',Summer:'🩴',Electronics:'💻',Groceries:'🛒',Beauty:'💄',Others:'📦',All:'🗂️'};
+const STATUS_COLOR = {Pending:'badge-gold',Accepted:'badge-blue','Assigned to Rider':'badge-blue','Out for Delivery':'badge-blue',Delivered:'badge-green',Cancelled:'badge-red'};
+
+// ─── HELPERS ───────────────────────────────────────────────────
+function fmt(n)  { return '₦' + Number(n || 0).toLocaleString(); }
+function ts()    { return firebase.firestore.FieldValue.serverTimestamp(); }
+function uid()   { return db.collection('_').doc().id; }
+
+function showOverlay(msg = 'Loading…') {
+  document.getElementById('overlay-text').textContent = msg;
+  document.getElementById('overlay').classList.remove('hidden');
+}
+function hideOverlay() {
+  document.getElementById('overlay').classList.add('hidden');
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function showScreen(name) {
+  // Force hide ALL screens including splash
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById('s-' + name);
+  if (el) {
+    el.classList.add('active');
+    el.style.display = 'flex';
+    el.querySelector('.content')?.scrollTo(0, 0);
+  }
+  const renderMap = {
+    'customer-home':     renderCustomerHome,
+    'product-list':      renderProductList,
+    'product-detail':    renderProductDetail,
+    'cart':              renderCart,
+    'checkout':          renderCheckout,
+    'order-tracking':    renderOrderTracking,
+    'order-history':     renderOrderHistory,
+    'customer-profile':  renderCustomerProfile,
+    'merchant-home':     renderMerchantHome,
+    'merchant-products': renderMerchantProducts,
+    'edit-product':      renderEditProduct,
+    'merchant-orders':   renderMerchantOrders,
+    'merchant-profile':  renderMerchantProfile,
+    'rider-home':        renderRiderHome,
+    'rider-available':   renderRiderAvailable,
+    'rider-accepted':    renderRiderAccepted,
+    'rider-history':     renderRiderHistory,
+    'rider-profile':     renderRiderProfile,
+  };
+  if (renderMap[name]) renderMap[name]();
+}
+
+function selectRole(role) {
+  currentRole = role;
+  ['customer','merchant','rider'].forEach(r => {
+    document.getElementById('rc-'+r)?.classList.toggle('selected', r === role);
+  });
+  const loginTitle = document.getElementById('login-title');
+  const regTitle   = document.getElementById('register-title');
+  const emoji      = document.getElementById('login-emoji');
+  const icons = {customer:'🛍️',merchant:'🏪',rider:'🏍️'};
+  if (loginTitle) loginTitle.textContent = role.charAt(0).toUpperCase()+role.slice(1)+' Login';
+  if (regTitle)   regTitle.textContent   = role.charAt(0).toUpperCase()+role.slice(1)+' Register';
+  if (emoji)      emoji.textContent      = icons[role] || '👤';
+  // update register extra fields
+  renderRegisterExtra();
+}
+
+function renderRegisterExtra() {
+  const el = document.getElementById('r-extra');
+  if (!el) return;
+  if (currentRole === 'customer') {
+    el.innerHTML = `<div class="form-group"><label>Delivery Address</label><input type="text" id="r-addr" placeholder="Your default delivery address"></div>`;
+  } else if (currentRole === 'merchant') {
+    el.innerHTML = `<div class="form-group"><label>Store / Business Name *</label><input type="text" id="r-store" placeholder="e.g. Ade's Supermarket"></div>`;
+  } else {
+    el.innerHTML = `<div class="form-group"><label>Vehicle Type</label><select id="r-vehicle"><option>Motorcycle</option><option>Bicycle</option><option>Car</option><option>Van</option></select></div>`;
+  }
+}
+
+function previewImage(input, previewId, dataId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const prev = document.getElementById(previewId);
+    prev.innerHTML = `<img src="${e.target.result}" alt="preview">`;
+    if (dataId) document.getElementById(dataId).value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ─── AUTH ──────────────────────────────────────────────────────
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass  = document.getElementById('l-pass').value;
+  if (!email || !pass) { toast('Please fill in all fields'); return; }
+  showOverlay('Signing in…');
+  try {
+    const cred = await auth.signInWithEmailAndPassword(email, pass);
+    // role check
+    const snap = await db.collection('users').doc(cred.user.uid).get();
+    if (!snap.exists || snap.data().role !== currentRole) {
+      await auth.signOut();
+      hideOverlay();
+      toast('No ' + currentRole + ' account found with these credentials.');
+      return;
+    }
+    // onAuthStateChanged will handle navigation
+  } catch (e) {
+    hideOverlay();
+    toast(friendlyError(e));
+  }
+}
+
+async function doRegister() {
+  const name  = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const pass  = document.getElementById('r-pass').value;
+  const phone = document.getElementById('r-phone').value.trim();
+  if (!name || !email || !pass || !phone) { toast('Please fill in all required fields'); return; }
+  if (pass.length < 6) { toast('Password must be at least 6 characters'); return; }
+  showOverlay('Creating account…');
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    const userData = { id: cred.user.uid, name, email, phone, role: currentRole, createdAt: ts() };
+    if (currentRole === 'customer')  userData.address     = document.getElementById('r-addr')?.value || '';
+    if (currentRole === 'merchant')  userData.storeName   = document.getElementById('r-store')?.value || name;
+    if (currentRole === 'rider')   { userData.vehicleType = document.getElementById('r-vehicle')?.value || 'Motorcycle'; userData.available = true; }
+    await db.collection('users').doc(cred.user.uid).set(userData);
+    await cred.user.updateProfile({ displayName: name });
+    // onAuthStateChanged handles navigation
+  } catch (e) {
+    hideOverlay();
+    toast(friendlyError(e));
+  }
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('l-email').value.trim();
+  if (!email) { toast('Enter your email first'); return; }
+  try {
+    await auth.sendPasswordResetEmail(email);
+    toast('Password reset email sent!');
+  } catch (e) {
+    toast(friendlyError(e));
+  }
+}
+
+function doLogout() {
+  if (!confirm('Log out of NAVIX?')) return;
+  auth.signOut();
+  currentUser = null;
+  cartItems = [];
+  selectedProduct = null;
+  selectedOrder = null;
+  unsubListeners.forEach(u => u());
+  unsubListeners = [];
+  showScreen('role-select');
+  toast('Logged out successfully');
+}
+
+function friendlyError(e) {
+  const map = {
+    'auth/user-not-found':       'No account found with this email',
+    'auth/wrong-password':       'Incorrect password',
+    'auth/email-already-in-use': 'Email already registered',
+    'auth/invalid-email':        'Invalid email address',
+    'auth/weak-password':        'Password too weak (min 6 chars)',
+    'auth/network-request-failed': 'Network error — check your connection',
+    'auth/too-many-requests':    'Too many attempts — try again later',
+  };
+  return map[e.code] || e.message || 'Something went wrong';
+}
+
+// ─── AUTH STATE LISTENER ───────────────────────────────────────
+auth.onAuthStateChanged(async user => {
+  if (user) {
+    try {
+      const snap = await db.collection('users').doc(user.uid).get();
+      if (!snap.exists) { auth.signOut(); return; }
+      currentUser = { id: user.uid, ...snap.data() };
+      currentRole = currentUser.role;
+      hideOverlay();
+      // Force hide splash before navigating
+      const splash = document.getElementById('s-splash');
+      if (splash) { splash.classList.remove('active'); splash.style.display = 'none'; }
+      const dest = { customer: 'customer-home', merchant: 'merchant-home', rider: 'rider-home' };
+      showScreen(dest[currentRole] || 'role-select');
+      // Init push notifications after login
+      initMessaging();
+    } catch (e) {
+      hideOverlay();
+      showScreen('role-select');
+    }
+  } else {
+    hideOverlay();
+    if (!document.querySelector('.screen.active') || document.getElementById('s-splash').classList.contains('active')) {
+      // stay on splash / role-select
+    }
+  }
+});
+
+// ─── CART HELPERS ──────────────────────────────────────────────
+function getCartRef() { return db.collection('carts').where('customerId','==',currentUser.id); }
+
+async function loadCart() {
+  const snap = await db.collection('carts').where('customerId','==',currentUser.id).get();
+  cartItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  updateCartBadges();
+}
+
+function updateCartBadges() {
+  const n = cartItems.length;
+  ['home','pl','pd'].forEach(id => {
+    const el = document.getElementById('cart-badge-'+id);
+    if (el) { el.textContent = n; el.style.display = n > 0 ? 'block' : 'none'; }
+  });
+}
+
+async function addToCart(product) {
+  const exists = cartItems.find(c => c.productId === product.id);
+  if (exists) { toast('Already in cart'); return; }
+  const item = {
+    customerId: currentUser.id, productId: product.id,
+    productName: product.name, price: product.price,
+    quantity: 1, imageUrl: product.imageUrl || '', emoji: product.emoji || '📦',
+    merchantId: product.merchantId
+  };
+  showOverlay('Adding to cart…');
+  try {
+    const ref = await db.collection('carts').add(item);
+    cartItems.push({ id: ref.id, ...item });
+    updateCartBadges();
+    hideOverlay();
+    toast('Added to cart! 🛒');
+    renderProductDetail();
+  } catch (e) { hideOverlay(); toast('Failed to add to cart'); }
+}
+
+async function removeFromCart(cartId) {
+  showOverlay('Removing…');
+  try {
+    await db.collection('carts').doc(cartId).delete();
+    cartItems = cartItems.filter(c => c.id !== cartId);
+    updateCartBadges();
+    hideOverlay();
+    toast('Removed from cart');
+    renderCart();
+  } catch (e) { hideOverlay(); toast('Error removing item'); }
+}
+
+async function updateCartQty(cartId, delta) {
+  const item = cartItems.find(c => c.id === cartId);
+  if (!item) return;
+  const newQty = Math.max(1, item.quantity + delta);
+  try {
+    await db.collection('carts').doc(cartId).update({ quantity: newQty });
+    item.quantity = newQty;
+    renderCart();
+  } catch (e) { toast('Error updating quantity'); }
+}
+
+async function clearCart() {
+  const batch = db.batch();
+  cartItems.forEach(c => batch.delete(db.collection('carts').doc(c.id)));
+  await batch.commit();
+  cartItems = [];
+  updateCartBadges();
+}
+
+// ─── CUSTOMER SCREENS ──────────────────────────────────────────
+async function renderCustomerHome() {
+  document.getElementById('ch-name').textContent = currentUser.name.split(' ')[0];
+  await loadCart();
+  loadNotifBadge(); // update notification badge
+  const content = document.getElementById('ch-content');
+
+  // load products
+  try {
+    const snap = await db.collection('products').orderBy('createdAt','desc').limit(30).get();
+    const products = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.stock > 0);
+
+    let filtered = products;
+    if (searchQuery) filtered = products.filter(p =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.category||'').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.merchantName||'').toLowerCase().includes(searchQuery.toLowerCase())
+    );
+    if (selectedCategory !== 'All') filtered = filtered.filter(p => p.category === selectedCategory);
+
+    content.innerHTML = `
+      <div class="sec-head"><span class="sec-title">Categories</span></div>
+      <div class="cats" style="margin-bottom:16px;">
+        ${CATEGORIES.map(c => `<div class="chip ${selectedCategory===c?'active':''}" onclick="selectedCategory='${c}';renderCustomerHome()">${CAT_ICONS[c]||''} ${c}</div>`).join('')}
+      </div>
+      <div class="sec-head">
+        <span class="sec-title">${searchQuery ? 'Search Results' : selectedCategory !== 'All' ? selectedCategory : 'Featured Products'}</span>
+        <span class="sec-link" onclick="showScreen('product-list')">See all →</span>
+      </div>
+      ${filtered.length === 0
+        ? `<div class="empty-state"><span class="empty-icon">🔍</span><div class="empty-title">No products found</div><div class="empty-sub">Try a different search or category</div></div>`
+        : `<div class="product-grid">${filtered.map(p => productCard(p)).join('')}</div>`
+      }`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load products</div><div class="empty-sub">Check your internet connection</div></div>`;
+  }
+}
+
+function handleSearch(val) {
+  searchQuery = val;
+  if (document.getElementById('s-customer-home')?.classList.contains('active')) renderCustomerHome();
+  if (document.getElementById('s-product-list')?.classList.contains('active')) renderProductList();
+}
+
+async function renderProductList() {
+  await loadCart();
+  const content = document.getElementById('pl-content');
+  const catsEl  = document.getElementById('pl-cats');
+  if (catsEl) catsEl.innerHTML = CATEGORIES.map(c =>
+    `<div class="chip ${selectedCategory===c?'active':''}" onclick="selectedCategory='${c}';renderProductList()">${CAT_ICONS[c]||''} ${c}</div>`
+  ).join('');
+
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    let q = db.collection('products').orderBy('createdAt','desc');
+    const snap = await q.get();
+    let products = snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(p => p.stock > 0);
+    if (selectedCategory !== 'All') products = products.filter(p => p.category === selectedCategory);
+    const sq = document.getElementById('pl-search')?.value.toLowerCase() || searchQuery.toLowerCase();
+    if (sq) products = products.filter(p =>
+      p.name.toLowerCase().includes(sq) || (p.category||'').toLowerCase().includes(sq) || (p.merchantName||'').toLowerCase().includes(sq)
+    );
+    content.innerHTML = products.length === 0
+      ? `<div class="empty-state"><span class="empty-icon">📦</span><div class="empty-title">No products found</div></div>`
+      : `<div class="product-grid">${products.map(p => productCard(p)).join('')}</div>`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load</div></div>`;
+  }
+}
+
+function productCard(p) {
+  const img = p.imageUrl
+    ? `<img src="${p.imageUrl}" alt="${p.name}" onerror="this.parentNode.textContent='${p.emoji||'📦'}';">`
+    : `<span style="font-size:40px;">${p.emoji || '📦'}</span>`;
+  return `
+    <div class="product-card" onclick="selectedProduct='${p.id}';showScreen('product-detail')">
+      <div class="product-img">${img}</div>
+      <div class="product-info">
+        <div class="product-name">${p.name}</div>
+        <div class="product-price">${fmt(p.price)}</div>
+        <div class="product-seller">${p.merchantName||''}</div>
+        <span class="badge badge-green" style="margin-top:5px;font-size:10px;">${p.category||''}</span>
+      </div>
+    </div>`;
+}
+
+async function renderProductDetail() {
+  const content = document.getElementById('pd-content');
+  const backBtn = document.getElementById('pd-back');
+  if (backBtn) backBtn.onclick = () => history.length > 1 ? history.back() : showScreen('customer-home');
+  if (!selectedProduct) { showScreen('customer-home'); return; }
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('products').doc(selectedProduct).get();
+    if (!snap.exists) { showScreen('customer-home'); return; }
+    const p = { id: snap.id, ...snap.data() };
+    await loadCart();
+    const inCart = cartItems.find(c => c.productId === p.id);
+    const img = p.imageUrl
+      ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:14px;" onerror="this.outerHTML='<span style=font-size:80px>${p.emoji||'📦'}</span>';">`
+      : `<span style="font-size:80px;">${p.emoji || '📦'}</span>`;
+    content.innerHTML = `
+      <div style="background:var(--surface);border-radius:14px;height:140px;display:flex;align-items:center;justify-content:center;margin-bottom:10px;overflow:hidden;">${img}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div style="font-size:18px;font-weight:700;flex:1;padding-right:12px;line-height:1.3;">${p.name}</div>
+        <div style="font-size:22px;font-weight:700;color:var(--green);white-space:nowrap;">${fmt(p.price)}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+        <span class="badge badge-green">${p.category||''}</span>
+        <span class="badge ${p.stock > 0 ? 'badge-blue' : 'badge-red'}">${p.stock > 0 ? p.stock+' in stock' : 'Out of stock'}</span>
+        ${p.delivery ? `<span class="badge badge-green">🚚 Delivery available</span>` : ''}
+      </div>
+      <p style="font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:16px;">${p.desc||''}</p>
+      <div class="card">
+        <div class="card-row" style="margin-bottom:8px;"><span style="font-size:13px;color:var(--muted);">Sold by</span><span style="font-size:13px;font-weight:600;">${p.merchantName||''}</span></div>
+      </div>
+      ${p.stock > 0 ? (inCart
+        ? `<button class="btn btn-ghost" onclick="removeFromCart('${inCart.id}')">✕ Remove from Cart</button>
+           <button class="btn btn-primary" onclick="showScreen('cart')" style="margin-top:8px;">View Cart →</button>`
+        : `<button class="btn btn-primary" onclick="addToCartById('${p.id}')">Add to Cart 🛒</button>`
+      ) : `<button class="btn btn-ghost" disabled>Out of Stock</button>`}`;
+    updateCartBadges();
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load product</div></div>`;
+  }
+}
+
+async function addToCartById(pid) {
+  const snap = await db.collection('products').doc(pid).get();
+  if (snap.exists) addToCart({ id: snap.id, ...snap.data() });
+}
+
+async function renderCart() {
+  await loadCart();
+  const content = document.getElementById('cart-content');
+  const titleEl = document.getElementById('cart-title');
+  if (titleEl) titleEl.textContent = `My Cart (${cartItems.length})`;
+  if (cartItems.length === 0) {
+    content.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">🛒</span>
+        <div class="empty-title">Your cart is empty</div>
+        <div class="empty-sub">Browse products and add items to your cart</div>
+        <button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="showScreen('product-list')">Browse Products</button>
+      </div>`;
+    return;
+  }
+  const total = cartItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+  content.innerHTML = `
+    ${cartItems.map(item => `
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:60px;height:60px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;">
+            ${item.imageUrl ? `<img src="${item.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : item.emoji||'📦'}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${item.productName}</div>
+            <div style="color:var(--green);font-weight:700;">${fmt(item.price)}</div>
+          </div>
+          <div class="qty-stepper">
+            <button class="qty-btn" onclick="updateCartQty('${item.id}',-1)">−</button>
+            <span style="font-weight:700;min-width:20px;text-align:center;">${item.quantity}</span>
+            <button class="qty-btn" onclick="updateCartQty('${item.id}',1)">+</button>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:10px;border-top:1px solid var(--border);">
+          <span style="font-size:13px;color:var(--muted);">Subtotal: <strong>${fmt(item.price * item.quantity)}</strong></span>
+          <button class="btn btn-danger btn-sm" onclick="removeFromCart('${item.id}')">Remove</button>
+        </div>
+      </div>`).join('')}
+    <div class="card" style="background:var(--surface);">
+      <div class="card-row"><span style="font-size:14px;">Subtotal</span><span style="font-weight:600;">${fmt(total)}</span></div>
+      <div class="card-row" style="margin-top:6px;"><span style="font-size:13px;color:var(--muted);">Delivery fee</span><span style="color:var(--green);font-size:13px;">₦500 flat</span></div>
+      <hr class="divider">
+      <div class="card-row"><span style="font-size:15px;font-weight:700;">Total</span><span style="font-size:17px;font-weight:700;color:var(--green);">${fmt(total + 500)}</span></div>
+    </div>
+    <button class="btn btn-primary" style="font-size:15px;padding:15px;" onclick="showScreen('checkout')">Proceed to Checkout</button>`;
+}
+
+async function renderCheckout() {
+  await loadCart();
+  const content = document.getElementById('checkout-content');
+  if (cartItems.length === 0) { showScreen('cart'); return; }
+  const subtotal = cartItems.reduce((s, i) => s + (i.price * i.quantity), 0);
+  const delivery = 500;
+  const total    = subtotal + delivery;
+  const payments = [
+    { id:'Cash on Delivery', icon:'💵', label:'Cash on Delivery' },
+    { id:'Card Payment',     icon:'💳', label:'Card Payment'     },
+    { id:'Wallet',           icon:'👛', label:'Wallet'           },
+    { id:'Bank Transfer',    icon:'🏦', label:'Bank Transfer'    },
+  ];
+  content.innerHTML = `
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:12px;">📍 Delivery Address</div>
+      <textarea id="co-addr" placeholder="Enter delivery address" style="min-height:70px;">${currentUser.address||''}</textarea>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:12px;">💳 Payment Method</div>
+      ${payments.map(p => `
+        <div class="pay-option ${selectedPayment===p.id?'selected':''}" onclick="selectPayment('${p.id}')">
+          <span class="pay-icon">${p.icon}</span>
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:500;">${p.label}</div>
+            ${p.id !== 'Cash on Delivery' ? '<div style="font-size:10px;color:var(--muted);">Powered by Paystack 🔒</div>' : ''}
+          </div>
+          <div class="pay-radio"></div>
+        </div>`).join('')}
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:12px;">📋 Order Summary (${cartItems.length} items)</div>
+      ${cartItems.map(i => `
+        <div class="card-row" style="margin-bottom:8px;">
+          <span style="font-size:13px;flex:1;padding-right:10px;">${i.emoji||'📦'} ${i.productName} × ${i.quantity}</span>
+          <span style="font-size:13px;font-weight:600;">${fmt(i.price * i.quantity)}</span>
+        </div>`).join('')}
+      <hr class="divider">
+      <div class="card-row"><span style="font-size:13px;color:var(--muted);">Subtotal</span><span>${fmt(subtotal)}</span></div>
+      <div class="card-row" style="margin-top:6px;"><span style="font-size:13px;color:var(--muted);">Delivery</span><span>${fmt(delivery)}</span></div>
+      <hr class="divider">
+      <div class="card-row">
+        <span style="font-weight:700;font-size:15px;">Total</span>
+        <span style="font-weight:700;font-size:17px;color:var(--green);">${fmt(total)}</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="font-size:15px;padding:15px;" onclick="placeOrder()">
+      Place Order — ${fmt(total)}
+    </button>`;
+}
+
+function selectPayment(method) {
+  selectedPayment = method;
+  renderCheckout();
+}
+
+async function placeOrder() {
+  if (cartItems.length === 0) { toast('Cart is empty'); return; }
+  const addr = document.getElementById('co-addr')?.value?.trim();
+  if (!addr) { toast('Please enter a delivery address'); return; }
+  const subtotal = cartItems.reduce((s, i) => s + i.price * i.quantity, 0);
+  const total = subtotal + 500;
+
+  // Cash on Delivery — skip payment gateway
+  if (selectedPayment === 'Cash on Delivery') {
+    await saveOrder(addr, total, 'Pending');
+    return;
+  }
+
+  // Card / Bank Transfer / Wallet — go through Paystack
+  const handler = PaystackPop.setup({
+    key:       PAYSTACK_KEY,
+    email:     currentUser.email,
+    amount:    total * 100, // Paystack uses kobo
+    currency:  'NGN',
+    ref:       'NAVIX_' + Date.now(),
+    metadata: {
+      custom_fields: [
+        { display_name: 'Customer Name',  variable_name: 'customer_name',  value: currentUser.name },
+        { display_name: 'Phone Number',   variable_name: 'phone',          value: currentUser.phone || '' },
+        { display_name: 'Payment Method', variable_name: 'payment_method', value: selectedPayment },
+      ]
+    },
+    callback: async function(response) {
+      // Payment successful
+      await saveOrder(addr, total, 'Paid', response.reference);
+    },
+    onClose: function() {
+      toast('Payment cancelled');
+    }
+  });
+  handler.openIframe();
+}
+
+async function saveOrder(addr, total, paymentStatus, paystackRef) {
+  showOverlay('Placing your order…');
+  try {
+    const order = {
+      customerId:      currentUser.id,
+      customerName:    currentUser.name,
+      customerPhone:   currentUser.phone || '',
+      customerAddress: addr,
+      totalAmount:     total,
+      paymentMethod:   selectedPayment,
+      paymentStatus:   paymentStatus,
+      paystackRef:     paystackRef || null,
+      orderStatus:     'Pending',
+      riderId:         null,
+      riderName:       null,
+      createdAt:       ts(),
+      items:           cartItems.map(i => ({
+        productId:   i.productId,
+        productName: i.productName,
+        price:       i.price,
+        quantity:    i.quantity,
+        emoji:       i.emoji || '📦',
+        merchantId:  i.merchantId || null,
+      })),
+    };
+    const ref = await db.collection('orders').add(order);
+    await clearCart();
+    selectedOrder = ref.id;
+    hideOverlay();
+    toast('Order placed successfully! 🎉');
+    // Notify merchants
+    await notifyMerchants({ ...order, items: cartItems.map(i => ({ merchantId: i.merchantId })) });
+    showScreen('order-tracking');
+  } catch (e) {
+    hideOverlay();
+    toast('Failed to place order: ' + e.message);
+  }
+}
+
+async function renderOrderTracking() {
+  const content = document.getElementById('ot-content');
+  if (!selectedOrder) { showScreen('order-history'); return; }
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    // Real-time listener
+    unsubListeners.forEach(u => u());
+    unsubListeners = [];
+    const unsub = db.collection('orders').doc(selectedOrder).onSnapshot(snap => {
+      if (!snap.exists) return;
+      const order = { id: snap.id, ...snap.data() };
+      const steps = ['Pending','Accepted','Assigned to Rider','Out for Delivery','Delivered'];
+      const si = steps.indexOf(order.orderStatus);
+      const statusColor = STATUS_COLOR;
+      content.innerHTML = `
+        <div class="card" style="border-left:3px solid var(--green);">
+          <div style="font-size:12px;color:var(--muted);">Order ID</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px;">#${order.id}</div>
+          <div class="card-row">
+            <span style="font-size:13px;color:var(--muted);">Total</span>
+            <span style="font-weight:700;color:var(--green);font-size:16px;">${fmt(order.totalAmount)}</span>
+          </div>
+          <div class="card-row" style="margin-top:4px;">
+            <span style="font-size:13px;color:var(--muted);">Payment</span>
+            <span style="font-size:13px;">${order.paymentMethod}</span>
+          </div>
+          ${order.riderName ? `<div class="card-row" style="margin-top:4px;"><span style="font-size:13px;color:var(--muted);">Rider</span><span style="font-size:13px;">${order.riderName}</span></div>` : ''}
+        </div>
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:16px;">Order Status</div>
+          <div class="status-steps">
+            ${steps.map((step, i) => `
+              <div class="status-step">
+                <div class="status-left">
+                  <div class="status-dot ${i < si ? 'done' : i === si ? 'active' : ''}"></div>
+                  ${i < steps.length - 1 ? `<div class="status-line ${i < si ? 'done' : ''}"></div>` : ''}
+                </div>
+                <div class="status-body">
+                  <div class="status-label" style="color:${i > si ? 'var(--muted)' : 'var(--text)'};">${step}</div>
+                  ${i === si ? `<div class="status-sub gold">Current status</div>` : i < si ? `<div class="status-sub">✓ Completed</div>` : ''}
+                </div>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:10px;">Items (${(order.items||[]).length})</div>
+          ${(order.items||[]).map(i => `
+            <div class="card-row" style="margin-bottom:8px;">
+              <span style="font-size:13px;">${i.emoji||'📦'} ${i.productName} × ${i.quantity}</span>
+              <span style="font-size:13px;font-weight:600;">${fmt(i.price * i.quantity)}</span>
+            </div>`).join('')}
+        </div>
+        <div class="card">
+          <div style="font-weight:700;margin-bottom:6px;">📍 Delivery Address</div>
+          <div style="font-size:14px;color:var(--muted);">${order.customerAddress}</div>
+        </div>`;
+    });
+    unsubListeners.push(unsub);
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load order</div></div>`;
+  }
+}
+
+async function renderOrderHistory() {
+  const content = document.getElementById('oh-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').where('customerId','==',currentUser.id).orderBy('createdAt','desc').get();
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (orders.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">📦</span><div class="empty-title">No orders yet</div><div class="empty-sub">Your order history will appear here</div><button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="showScreen('customer-home')">Start Shopping</button></div>`;
+      return;
+    }
+    content.innerHTML = orders.map(o => `
+      <div class="card" onclick="selectedOrder='${o.id}';showScreen('order-tracking')" style="cursor:pointer;">
+        <div class="card-row">
+          <div>
+            <div style="font-weight:700;font-size:14px;">#${o.id.slice(-8).toUpperCase()}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px;">${(o.items||[]).length} items · ${fmt(o.totalAmount)}</div>
+            <div style="font-size:11px;color:var(--muted);margin-top:2px;">${o.createdAt?.toDate?.()?.toLocaleDateString?.() || ''}</div>
+          </div>
+          <span class="badge ${STATUS_COLOR[o.orderStatus]||'badge-gray'}">${o.orderStatus}</span>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load orders</div></div>`;
+  }
+}
+
+async function renderCustomerProfile() {
+  const content = document.getElementById('cp-content');
+  const orders  = await db.collection('orders').where('customerId','==',currentUser.id).get();
+  const delivered = orders.docs.filter(d => d.data().orderStatus === 'Delivered').length;
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <div class="avatar" style="width:72px;height:72px;background:var(--green-light);border:2px solid var(--green);color:var(--green);margin:0 auto 10px;font-size:26px;">
+        ${currentUser.name.charAt(0).toUpperCase()}
+      </div>
+      <div style="font-size:18px;font-weight:700;">${currentUser.name}</div>
+      <div style="font-size:13px;color:var(--muted);">${currentUser.email}</div>
+      <span class="badge badge-green" style="margin-top:8px;">Customer</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${orders.size}</div><div class="stat-lbl">Total Orders</div></div>
+      <div class="stat-card"><div class="stat-num">${delivered}</div><div class="stat-lbl">Delivered</div></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:14px;">Edit Profile</div>
+      <div class="form-group"><label>Full Name</label><input type="text" id="prof-name" value="${currentUser.name}"></div>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="prof-phone" value="${currentUser.phone||''}"></div>
+      <div class="form-group"><label>Delivery Address</label><textarea id="prof-addr" style="min-height:70px;">${currentUser.address||''}</textarea></div>
+      <button class="btn btn-primary" onclick="saveCustomerProfile()">Save Changes</button>
+    </div>
+    <button class="btn btn-danger" onclick="doLogout()">Log Out</button>`;
+}
+
+async function saveCustomerProfile() {
+  const name  = document.getElementById('prof-name').value.trim();
+  const phone = document.getElementById('prof-phone').value.trim();
+  const addr  = document.getElementById('prof-addr').value.trim();
+  if (!name) { toast('Name cannot be empty'); return; }
+  showOverlay('Saving…');
+  try {
+    await db.collection('users').doc(currentUser.id).update({ name, phone, address: addr });
+    currentUser.name  = name;
+    currentUser.phone = phone;
+    currentUser.address = addr;
+    hideOverlay();
+    toast('Profile updated!');
+  } catch (e) { hideOverlay(); toast('Failed to save'); }
+}
+
+// ─── MERCHANT SCREENS ──────────────────────────────────────────
+async function renderMerchantHome() {
+  document.getElementById('mh-store-name').textContent = currentUser.storeName || currentUser.name;
+  const content = document.getElementById('mh-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const [prodsSnap, ordersSnap] = await Promise.all([
+      db.collection('products').where('merchantId','==',currentUser.id).get(),
+      db.collection('orders').get(),
+    ]);
+    const myOrders = ordersSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(o => (o.items||[]).some(i => i.merchantId === currentUser.id));
+    const pending   = myOrders.filter(o => o.orderStatus === 'Pending').length;
+    const completed = myOrders.filter(o => o.orderStatus === 'Delivered').length;
+    const revenue   = myOrders.filter(o => o.orderStatus === 'Delivered')
+      .reduce((s, o) => s + (o.items||[]).filter(i => i.merchantId === currentUser.id)
+        .reduce((ss, i) => ss + i.price * i.quantity, 0), 0);
+    content.innerHTML = `
+      <div class="notice">Welcome back, <strong>${currentUser.name.split(' ')[0]}</strong>! Here's your store overview.</div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num">${prodsSnap.size}</div><div class="stat-lbl">Products</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--gold);">${pending}</div><div class="stat-lbl">Pending Orders</div></div>
+        <div class="stat-card"><div class="stat-num">${completed}</div><div class="stat-lbl">Completed</div></div>
+        <div class="stat-card"><div class="stat-num" style="font-size:15px;">${fmt(revenue)}</div><div class="stat-lbl">Revenue</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="showScreen('add-product')">＋  Add New Product</button>
+      <button class="btn btn-outline" onclick="showScreen('merchant-products')">📦  View My Products</button>
+      <button class="btn btn-outline" onclick="showScreen('merchant-orders')">📋  Manage Orders ${pending > 0 ? `<span class="badge badge-gold" style="margin-left:8px;">${pending} new</span>` : ''}</button>`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load dashboard</div></div>`;
+  }
+}
+
+async function saveProduct(isEdit) {
+  const name  = document.getElementById(isEdit?'ep-name':'ap-name').value.trim();
+  const desc  = document.getElementById(isEdit?'ep-desc':'ap-desc').value.trim();
+  const price = parseFloat(document.getElementById(isEdit?'ep-price':'ap-price').value);
+  const cat   = document.getElementById(isEdit?'ep-cat':'ap-cat').value;
+  const stock = parseInt(document.getElementById(isEdit?'ep-stock':'ap-stock').value) || 0;
+  const del   = document.getElementById(isEdit?'ep-delivery':'ap-delivery').value === 'true';
+  if (!name || !desc || !price || !cat) { toast('Please fill in all required fields'); return; }
+  showOverlay(isEdit ? 'Saving changes…' : 'Adding product…');
+  try {
+    let imageUrl = '';
+    const imgData = document.getElementById(isEdit?'ep-img-data':'ap-img-data')?.value;
+    if (imgData && imgData.startsWith('data:')) {
+      const storageRef = storage.ref(`products/${uid()}`);
+      await storageRef.putString(imgData, 'data_url');
+      imageUrl = await storageRef.getDownloadURL();
+    }
+    const data = {
+      name, desc, price, category: cat, stock, delivery: del,
+      merchantId: currentUser.id, merchantName: currentUser.storeName || currentUser.name,
+      emoji: getCategoryEmoji(cat),
+    };
+    if (imageUrl) data.imageUrl = imageUrl;
+    if (isEdit) {
+      if (imageUrl) data.imageUrl = imageUrl;
+      await db.collection('products').doc(editingProduct).update(data);
+      toast('Product updated!');
+    } else {
+      data.createdAt = ts();
+      await db.collection('products').add(data);
+      toast('Product added!');
+    }
+    hideOverlay();
+    showScreen('merchant-products');
+  } catch (e) { hideOverlay(); toast('Error: ' + e.message); }
+}
+
+function getCategoryEmoji(cat) {
+  const m = {Food:'🍎',Medicine:'💊',Appliances:'🏠',Mobiles:'📱',"Men's Wear":'👕',"Women's Wear":'👗',Kids:'🧸',Shoes:'👟',Winter:'🧥',Summer:'🩴',Electronics:'💻',Groceries:'🛒',Beauty:'💄'};
+  return m[cat] || '📦';
+}
+
+async function renderMerchantProducts() {
+  const content = document.getElementById('mp-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('products').where('merchantId','==',currentUser.id).orderBy('createdAt','desc').get();
+    const prods = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('mp-title').textContent = `My Products (${prods.length})`;
+    if (prods.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">📦</span><div class="empty-title">No products yet</div><div class="empty-sub">Add your first product to start selling</div><button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="showScreen('add-product')">Add Product</button></div>`;
+      return;
+    }
+    content.innerHTML = prods.map(p => `
+      <div class="card">
+        <div style="display:flex;gap:12px;align-items:center;">
+          <div style="width:56px;height:56px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:26px;overflow:hidden;flex-shrink:0;">
+            ${p.imageUrl ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : p.emoji||'📦'}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${p.name}</div>
+            <div style="color:var(--green);font-weight:700;">${fmt(p.price)}</div>
+            <div style="font-size:12px;color:var(--muted);">${p.category} · ${p.stock} in stock</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button class="btn btn-outline btn-sm" style="flex:1;" onclick="openEditProduct('${p.id}')">✏️ Edit</button>
+          <button class="btn btn-ghost btn-sm" style="flex:1;" onclick="updateStock('${p.id}', ${p.stock})">📦 Stock</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteProduct('${p.id}')">🗑️</button>
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load products</div></div>`;
+  }
+}
+
+async function openEditProduct(pid) {
+  editingProduct = pid;
+  showScreen('edit-product');
+}
+
+async function renderEditProduct() {
+  const content = document.getElementById('ep-content');
+  if (!editingProduct) { showScreen('merchant-products'); return; }
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('products').doc(editingProduct).get();
+    if (!snap.exists) { showScreen('merchant-products'); return; }
+    const p = snap.data();
+    const cats = ['Food','Medicine','Appliances','Mobiles',"Men's Wear","Women's Wear",'Kids','Shoes','Winter','Summer','Electronics','Groceries','Beauty','Others'];
+    content.innerHTML = `
+      <div id="ep-img-preview" class="img-preview" onclick="document.getElementById('ep-file').click()">
+        ${p.imageUrl
+          ? `<img src="${p.imageUrl}" style="width:100%;height:100%;object-fit:cover;">`
+          : `<div style="text-align:center;color:var(--muted);"><div style="font-size:36px;">📷</div><div style="font-size:13px;margin-top:6px;">Tap to change image</div></div>`}
+      </div>
+      <input type="file" id="ep-file" accept="image/*" style="display:none;" onchange="previewImage(this,'ep-img-preview','ep-img-data')">
+      <input type="hidden" id="ep-img-data">
+      <div class="form-group"><label>Product Name</label><input type="text" id="ep-name" value="${p.name||''}"></div>
+      <div class="form-group"><label>Description</label><textarea id="ep-desc">${p.desc||''}</textarea></div>
+      <div class="form-group"><label>Price (₦)</label><input type="number" id="ep-price" value="${p.price||0}"></div>
+      <div class="form-group"><label>Category</label>
+        <select id="ep-cat">${cats.map(c=>`<option ${c===p.category?'selected':''}>${c}</option>`).join('')}</select>
+      </div>
+      <div class="form-group"><label>Stock Quantity</label><input type="number" id="ep-stock" value="${p.stock||0}"></div>
+      <div class="form-group"><label>Delivery Available?</label>
+        <select id="ep-delivery">
+          <option value="true" ${p.delivery?'selected':''}>Yes</option>
+          <option value="false" ${!p.delivery?'selected':''}>No</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveProduct(true)">Save Changes</button>
+      <button class="btn btn-ghost" onclick="showScreen('merchant-products')">Cancel</button>`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load product</div></div>`;
+  }
+}
+
+async function deleteProduct(pid) {
+  if (!confirm('Delete this product? This cannot be undone.')) return;
+  showOverlay('Deleting…');
+  try {
+    await db.collection('products').doc(pid).delete();
+    hideOverlay();
+    toast('Product deleted');
+    renderMerchantProducts();
+  } catch (e) { hideOverlay(); toast('Failed to delete'); }
+}
+
+async function updateStock(pid, current) {
+  const qty = prompt(`Update stock quantity (current: ${current}):`, current);
+  if (qty === null) return;
+  const n = parseInt(qty);
+  if (isNaN(n) || n < 0) { toast('Invalid quantity'); return; }
+  showOverlay('Updating stock…');
+  try {
+    await db.collection('products').doc(pid).update({ stock: n });
+    hideOverlay(); toast('Stock updated to ' + n);
+    renderMerchantProducts();
+  } catch (e) { hideOverlay(); toast('Failed to update stock'); }
+}
+
+async function renderMerchantOrders() {
+  const content = document.getElementById('mo-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').orderBy('createdAt','desc').get();
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(o => (o.items||[]).some(i => i.merchantId === currentUser.id));
+    if (orders.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">📋</span><div class="empty-title">No orders yet</div><div class="empty-sub">Orders for your products will appear here</div></div>`;
+      return;
+    }
+    content.innerHTML = orders.map(o => {
+      const myItems = (o.items||[]).filter(i => i.merchantId === currentUser.id);
+      return `
+        <div class="card">
+          <div class="card-row" style="margin-bottom:8px;">
+            <div>
+              <div style="font-weight:700;">#${o.id.slice(-8).toUpperCase()}</div>
+              <div style="font-size:12px;color:var(--muted);">${o.customerName} · ${fmt(o.totalAmount)}</div>
+            </div>
+            <span class="badge ${STATUS_COLOR[o.orderStatus]||'badge-gray'}">${o.orderStatus}</span>
+          </div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:10px;">
+            ${myItems.map(i => `${i.emoji||'📦'} ${i.productName} ×${i.quantity}`).join(' · ')}
+          </div>
+          ${o.orderStatus === 'Pending' ? `
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-primary btn-sm" style="flex:1;" onclick="merchantUpdateOrder('${o.id}','Accepted')">✓ Accept</button>
+              <button class="btn btn-danger btn-sm" style="flex:1;" onclick="merchantUpdateOrder('${o.id}','Cancelled')">✕ Cancel</button>
+            </div>` : ''}
+          ${o.orderStatus === 'Accepted' ? `<div style="font-size:12px;color:var(--info);margin-top:6px;">⏳ Waiting for rider assignment…</div>` : ''}
+        </div>`;
+    }).join('');
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load orders</div></div>`;
+  }
+}
+
+async function merchantUpdateOrder(oid, status) {
+  showOverlay('Updating order…');
+  try {
+    await db.collection('orders').doc(oid).update({ orderStatus: status });
+    // Notify customer
+    const oSnap = await db.collection('orders').doc(oid).get();
+    if (oSnap.exists) {
+      const o = oSnap.data();
+      if (status === 'Accepted') {
+        await notifyCustomer(o.customerId, '✅ Order Accepted!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been accepted by the merchant.');
+        await notifyRiders('🚚 New Delivery Available!', 'A new order is ready for pickup — ' + fmt(o.totalAmount));
+      } else if (status === 'Cancelled') {
+        await notifyCustomer(o.customerId, '❌ Order Cancelled', 'Your order #' + oid.slice(-6).toUpperCase() + ' was cancelled by the merchant.');
+      }
+    }
+    hideOverlay(); toast('Order ' + status.toLowerCase());
+    renderMerchantOrders();
+  } catch (e) { hideOverlay(); toast('Failed to update order'); }
+}
+
+async function renderMerchantProfile() {
+  const content = document.getElementById('mprof-content');
+  const [prodsSnap, ordersSnap] = await Promise.all([
+    db.collection('products').where('merchantId','==',currentUser.id).get(),
+    db.collection('orders').get(),
+  ]);
+  const myOrders = ordersSnap.docs.filter(d => (d.data().items||[]).some(i => i.merchantId === currentUser.id));
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <div class="avatar" style="width:72px;height:72px;background:var(--gold-light);border:2px solid var(--gold);color:var(--gold);margin:0 auto 10px;font-size:26px;">
+        ${(currentUser.storeName||currentUser.name).charAt(0).toUpperCase()}
+      </div>
+      <div style="font-size:18px;font-weight:700;">${currentUser.storeName||currentUser.name}</div>
+      <div style="font-size:13px;color:var(--muted);">${currentUser.email}</div>
+      <span class="badge badge-gold" style="margin-top:8px;">Merchant</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${prodsSnap.size}</div><div class="stat-lbl">Products</div></div>
+      <div class="stat-card"><div class="stat-num">${myOrders.length}</div><div class="stat-lbl">Total Orders</div></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:14px;">Edit Store Info</div>
+      <div class="form-group"><label>Store Name</label><input type="text" id="mprof-store" value="${currentUser.storeName||''}"></div>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="mprof-phone" value="${currentUser.phone||''}"></div>
+      <button class="btn btn-primary" onclick="saveMerchantProfile()">Save Changes</button>
+    </div>
+    <button class="btn btn-danger" onclick="doLogout()">Log Out</button>`;
+}
+
+async function saveMerchantProfile() {
+  const store = document.getElementById('mprof-store').value.trim();
+  const phone = document.getElementById('mprof-phone').value.trim();
+  showOverlay('Saving…');
+  try {
+    await db.collection('users').doc(currentUser.id).update({ storeName: store, phone });
+    currentUser.storeName = store; currentUser.phone = phone;
+    hideOverlay(); toast('Profile updated!');
+  } catch (e) { hideOverlay(); toast('Failed to save'); }
+}
+
+// ─── RIDER SCREENS ─────────────────────────────────────────────
+async function renderRiderHome() {
+  document.getElementById('rh-name').textContent = currentUser.name.split(' ')[0];
+  const content = document.getElementById('rh-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').get();
+    const all  = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const avail    = all.filter(o => o.orderStatus === 'Accepted').length;
+    const active   = all.filter(o => o.riderId === currentUser.id && (o.orderStatus === 'Assigned to Rider' || o.orderStatus === 'Out for Delivery')).length;
+    const completed= all.filter(o => o.riderId === currentUser.id && o.orderStatus === 'Delivered').length;
+    const earnings = completed * 500;
+    content.innerHTML = `
+      <div class="card" style="background:var(--green);color:#fff;border:none;">
+        <div class="switch-wrap" style="border:none;padding:0;">
+          <div>
+            <div style="font-weight:700;">Availability Status</div>
+            <div style="font-size:13px;opacity:.85;">${currentUser.available ? '✅ You are available for deliveries' : '⛔ You are currently offline'}</div>
+          </div>
+          <label class="switch">
+            <input type="checkbox" ${currentUser.available?'checked':''} onchange="toggleRiderAvailability(this.checked)">
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-num" style="color:var(--gold);">${avail}</div><div class="stat-lbl">Available</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--info);">${active}</div><div class="stat-lbl">Active</div></div>
+        <div class="stat-card"><div class="stat-num">${completed}</div><div class="stat-lbl">Completed</div></div>
+        <div class="stat-card"><div class="stat-num" style="font-size:15px;">${fmt(earnings)}</div><div class="stat-lbl">Earnings</div></div>
+      </div>
+      <button class="btn btn-primary" onclick="showScreen('rider-available')">📍  Available Deliveries (${avail})</button>
+      <button class="btn btn-outline" onclick="showScreen('rider-accepted')">🚚  Active Deliveries (${active})</button>
+      <button class="btn btn-ghost" onclick="showScreen('rider-history')">📜  Delivery History</button>`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load dashboard</div></div>`;
+  }
+}
+
+async function toggleRiderAvailability(val) {
+  try {
+    await db.collection('users').doc(currentUser.id).update({ available: val });
+    currentUser.available = val;
+    toast(val ? 'You are now available 🟢' : 'You are now offline ⛔');
+    renderRiderHome();
+  } catch (e) { toast('Failed to update status'); }
+}
+
+async function renderRiderAvailable() {
+  const content = document.getElementById('ra-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').where('orderStatus','==','Accepted').get();
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    document.getElementById('ra-title').textContent = `Available Deliveries (${orders.length})`;
+    if (orders.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">📍</span><div class="empty-title">No available deliveries</div><div class="empty-sub">Check back soon for new orders</div></div>`;
+      return;
+    }
+    content.innerHTML = orders.map(o => `
+      <div class="delivery-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+          <div style="font-weight:700;">#${o.id.slice(-8).toUpperCase()}</div>
+          <span class="badge badge-gold">${o.paymentMethod}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:4px;">👤 ${o.customerName} · ${o.customerPhone||''}</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ${o.customerAddress||'Address not provided'}</div>
+        <div style="font-size:13px;margin-bottom:12px;">🛍️ ${(o.items||[]).length} items · <strong>${fmt(o.totalAmount)}</strong></div>
+        <button class="btn btn-primary btn-sm" style="width:100%;" onclick="acceptDelivery('${o.id}')">Accept Delivery</button>
+      </div>`).join('');
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load deliveries</div></div>`;
+  }
+}
+
+async function acceptDelivery(oid) {
+  showOverlay('Accepting delivery…');
+  try {
+    await db.collection('orders').doc(oid).update({
+      orderStatus: 'Assigned to Rider',
+      riderId: currentUser.id,
+      riderName: currentUser.name,
+    });
+    hideOverlay();
+    toast('Delivery accepted! 🏍️');
+    showScreen('rider-accepted');
+  } catch (e) { hideOverlay(); toast('Failed to accept delivery'); }
+}
+
+async function renderRiderAccepted() {
+  const content = document.getElementById('rac-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').where('riderId','==',currentUser.id).get();
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .filter(o => o.orderStatus === 'Assigned to Rider' || o.orderStatus === 'Out for Delivery');
+    document.getElementById('rac-title').textContent = `Active Deliveries (${orders.length})`;
+    if (orders.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">🚚</span><div class="empty-title">No active deliveries</div><div class="empty-sub">Accept a delivery to get started</div><button class="btn btn-primary" style="width:auto;padding:12px 28px;" onclick="showScreen('rider-available')">Find Deliveries</button></div>`;
+      return;
+    }
+    content.innerHTML = orders.map(o => `
+      <div class="delivery-card gold-left">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;">
+          <div style="font-weight:700;">#${o.id.slice(-8).toUpperCase()}</div>
+          <span class="badge badge-gold">${o.orderStatus}</span>
+        </div>
+        <div style="font-size:13px;margin-bottom:4px;">👤 ${o.customerName} · ${o.customerPhone||''}</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">📍 ${o.customerAddress}</div>
+        <div style="font-size:13px;margin-bottom:12px;">🛍️ ${(o.items||[]).length} items · <strong>${fmt(o.totalAmount)}</strong></div>
+        <div style="display:flex;gap:8px;">
+          ${o.orderStatus === 'Assigned to Rider'
+            ? `<button class="btn btn-gold btn-sm" style="flex:1;" onclick="riderUpdateOrder('${o.id}','Out for Delivery')">📦 Picked Up</button>`
+            : `<button class="btn btn-primary btn-sm" style="flex:1;" onclick="riderUpdateOrder('${o.id}','Delivered')">✅ Mark Delivered</button>`}
+        </div>
+      </div>`).join('');
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load</div></div>`;
+  }
+}
+
+async function riderUpdateOrder(oid, status) {
+  showOverlay('Updating status…');
+  try {
+    const update = { orderStatus: status };
+    if (status === 'Delivered') update.deliveredAt = ts();
+    await db.collection('orders').doc(oid).update(update);
+    // Notify customer
+    const oSnap = await db.collection('orders').doc(oid).get();
+    if (oSnap.exists) {
+      const o = oSnap.data();
+      if (status === 'Out for Delivery') {
+        await notifyCustomer(o.customerId, '🏍️ Order Out for Delivery!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been picked up and is on its way!');
+      } else if (status === 'Delivered') {
+        await notifyCustomer(o.customerId, '🎉 Order Delivered!', 'Your order #' + oid.slice(-6).toUpperCase() + ' has been delivered. Enjoy!');
+      }
+    }
+    hideOverlay();
+    toast(status === 'Delivered' ? '🎉 Delivery completed!' : '📦 Marked as picked up');
+    renderRiderAccepted();
+  } catch (e) { hideOverlay(); toast('Failed to update'); }
+}
+
+async function renderRiderHistory() {
+  const content = document.getElementById('rhistory-content');
+  content.innerHTML = `<div class="loader-wrap"><div class="spinner"></div></div>`;
+  try {
+    const snap = await db.collection('orders').where('riderId','==',currentUser.id).where('orderStatus','==','Delivered').orderBy('createdAt','desc').get();
+    const orders = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    if (orders.length === 0) {
+      content.innerHTML = `<div class="empty-state"><span class="empty-icon">📜</span><div class="empty-title">No completed deliveries yet</div></div>`;
+      return;
+    }
+    const totalEarnings = orders.length * 500;
+    content.innerHTML = `
+      <div class="stat-grid" style="margin-bottom:16px;">
+        <div class="stat-card"><div class="stat-num">${orders.length}</div><div class="stat-lbl">Completed</div></div>
+        <div class="stat-card"><div class="stat-num" style="font-size:15px;">${fmt(totalEarnings)}</div><div class="stat-lbl">Total Earnings</div></div>
+      </div>
+      ${orders.map(o => `
+        <div class="card">
+          <div class="card-row">
+            <div>
+              <div style="font-weight:700;font-size:14px;">#${o.id.slice(-8).toUpperCase()}</div>
+              <div style="font-size:12px;color:var(--muted);">${o.customerName} · ${fmt(o.totalAmount)}</div>
+              <div style="font-size:11px;color:var(--muted);">${o.createdAt?.toDate?.()?.toLocaleDateString?.() || ''}</div>
+            </div>
+            <div>
+              <span class="badge badge-green">Delivered</span>
+              <div style="font-size:12px;font-weight:700;color:var(--green);margin-top:4px;text-align:right;">+₦500</div>
+            </div>
+          </div>
+        </div>`).join('')}`;
+  } catch (e) {
+    content.innerHTML = `<div class="empty-state"><span class="empty-icon">⚠️</span><div class="empty-title">Failed to load history</div></div>`;
+  }
+}
+
+async function renderRiderProfile() {
+  const content = document.getElementById('rprof-content');
+  const snap = await db.collection('orders').where('riderId','==',currentUser.id).where('orderStatus','==','Delivered').get();
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:14px;">
+      <div class="avatar" style="width:72px;height:72px;background:var(--info-light);border:2px solid var(--info);color:var(--info);margin:0 auto 10px;font-size:26px;">
+        ${currentUser.name.charAt(0).toUpperCase()}
+      </div>
+      <div style="font-size:18px;font-weight:700;">${currentUser.name}</div>
+      <div style="font-size:13px;color:var(--muted);">${currentUser.vehicleType||'Motorcycle'} Rider</div>
+      <span class="badge ${currentUser.available?'badge-green':'badge-red'}" style="margin-top:8px;">${currentUser.available?'Available':'Offline'}</span>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-num">${snap.size}</div><div class="stat-lbl">Completed</div></div>
+      <div class="stat-card"><div class="stat-num" style="font-size:15px;">${fmt(snap.size * 500)}</div><div class="stat-lbl">Earnings</div></div>
+    </div>
+    <div class="card">
+      <div style="font-weight:700;margin-bottom:14px;">Edit Profile</div>
+      <div class="form-group"><label>Phone Number</label><input type="tel" id="rprof-phone" value="${currentUser.phone||''}"></div>
+      <div class="form-group"><label>Vehicle Type</label>
+        <select id="rprof-vehicle">
+          <option ${currentUser.vehicleType==='Motorcycle'?'selected':''}>Motorcycle</option>
+          <option ${currentUser.vehicleType==='Bicycle'?'selected':''}>Bicycle</option>
+          <option ${currentUser.vehicleType==='Car'?'selected':''}>Car</option>
+          <option ${currentUser.vehicleType==='Van'?'selected':''}>Van</option>
+        </select>
+      </div>
+      <div class="switch-wrap">
+        <div>
+          <div style="font-size:14px;font-weight:600;">Available for Deliveries</div>
+          <div style="font-size:12px;color:var(--muted);">Toggle your availability</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="rprof-avail" ${currentUser.available?'checked':''}>
+          <span class="switch-slider"></span>
+        </label>
+      </div>
+      <button class="btn btn-primary" style="margin-top:12px;" onclick="saveRiderProfile()">Save Changes</button>
+    </div>
+    <button class="btn btn-danger" onclick="doLogout()">Log Out</button>`;
+}
+
+async function saveRiderProfile() {
+  const phone = document.getElementById('rprof-phone').value.trim();
+  const vtype = document.getElementById('rprof-vehicle').value;
+  const avail = document.getElementById('rprof-avail').checked;
+  showOverlay('Saving…');
+  try {
+    await db.collection('users').doc(currentUser.id).update({ phone, vehicleType: vtype, available: avail });
+    currentUser.phone = phone; currentUser.vehicleType = vtype; currentUser.available = avail;
+    hideOverlay(); toast('Profile updated!');
+  } catch (e) { hideOverlay(); toast('Failed to save'); }
+}
+
+// ─── NOTIFICATIONS UI ─────────────────────────────────────────
+async function showNotifications() {
+  try {
+    const snap = await db.collection('notifications')
+      .where('userId','==',currentUser.id)
+      .orderBy('createdAt','desc')
+      .limit(20)
+      .get();
+    const notifs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    // Mark all as read
+    const batch = db.batch();
+    notifs.filter(n => !n.read).forEach(n => {
+      batch.update(db.collection('notifications').doc(n.id), { read: true });
+    });
+    await batch.commit();
+
+    // Update badge
+    updateNotifBadge(0);
+
+    // Show in a nice popup
+    const existing = document.getElementById('notif-panel');
+    if (existing) existing.remove();
+
+    const panel = document.createElement('div');
+    panel.id = 'notif-panel';
+    panel.style.cssText = 'position:absolute;top:54px;right:0;left:0;bottom:0;background:var(--white);z-index:9990;display:flex;flex-direction:column;';
+    panel.innerHTML = `
+      <div style="background:var(--green);color:#fff;padding:0 16px;height:48px;display:flex;align-items:center;gap:10px;flex-shrink:0;">
+        <span style="cursor:pointer;font-size:20px;" onclick="document.getElementById('notif-panel').remove()">←</span>
+        <span style="font-size:15px;font-weight:600;">Notifications</span>
+      </div>
+      <div style="flex:1;overflow-y:auto;padding:12px;">
+        ${notifs.length === 0
+          ? `<div class="empty-state"><span class="empty-icon">🔔</span><div class="empty-title">No notifications yet</div><div class="empty-sub">You'll see order updates here</div></div>`
+          : notifs.map(n => `
+            <div class="card" style="border-left:3px solid ${n.read ? 'var(--border)' : 'var(--green)'};">
+              <div style="font-weight:${n.read ? '400' : '700'};font-size:14px;">${n.title}</div>
+              <div style="font-size:13px;color:var(--muted);margin-top:3px;">${n.body}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px;">${n.createdAt?.toDate?.()?.toLocaleString?.() || ''}</div>
+            </div>`).join('')}
+      </div>`;
+    document.getElementById('app').appendChild(panel);
+  } catch(e) {
+    toast('Could not load notifications');
+  }
+}
+
+async function loadNotifBadge() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.collection('notifications')
+      .where('userId','==',currentUser.id)
+      .where('read','==',false)
+      .get();
+    updateNotifBadge(snap.size);
+  } catch(e) {}
+}
+
+function updateNotifBadge(count) {
+  const badge = document.getElementById('notif-badge');
+  if (!badge) return;
+  badge.textContent = count;
+  badge.style.display = count > 0 ? 'block' : 'none';
+}
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────
+async function initMessaging() {
+  try {
+    messaging = firebase.messaging();
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      console.log('Notification permission denied');
+      return;
+    }
+    const token = await messaging.getToken({ vapidKey: VAPID_KEY });
+    if (token && currentUser) {
+      // Save FCM token to user's Firestore document
+      await db.collection('users').doc(currentUser.id).update({ fcmToken: token });
+      console.log('FCM token saved');
+    }
+    // Handle foreground messages
+    messaging.onMessage((payload) => {
+      const { title, body } = payload.notification || {};
+      toast('🔔 ' + (title || 'NAVIX') + ': ' + (body || ''));
+      // Show browser notification if app is in foreground
+      if (Notification.permission === 'granted') {
+        new Notification(title || 'NAVIX', {
+          body: body || '',
+          icon: 'https://navix-ng.vercel.app/icon.png',
+          badge: 'https://navix-ng.vercel.app/icon.png',
+        });
+      }
+    });
+  } catch (e) {
+    console.log('Messaging init error:', e.message);
+  }
+}
+
+async function sendNotificationToUser(userId, title, body) {
+  try {
+    // Save notification to Firestore — your Cloud Function will pick it up
+    await db.collection('notifications').add({
+      userId,
+      title,
+      body,
+      read: false,
+      createdAt: ts(),
+    });
+  } catch (e) {
+    console.log('Notification save error:', e.message);
+  }
+}
+
+async function notifyMerchants(order) {
+  // Find all merchants in this order and notify them
+  const merchantIds = [...new Set((order.items || []).map(i => i.merchantId).filter(Boolean))];
+  for (const mid of merchantIds) {
+    await sendNotificationToUser(
+      mid,
+      '🛍️ New Order Received!',
+      `${order.customerName} ordered ${order.items.length} item(s) — ${fmt(order.totalAmount)}`
+    );
+  }
+}
+
+async function notifyCustomer(customerId, title, body) {
+  await sendNotificationToUser(customerId, title, body);
+}
+
+async function notifyRiders(title, body) {
+  // Notify all available riders
+  try {
+    const snap = await db.collection('users').where('role','==','rider').where('available','==',true).get();
+    for (const doc of snap.docs) {
+      await sendNotificationToUser(doc.id, title, body);
+    }
+  } catch(e) {
+    console.log('Rider notification error:', e);
+  }
+}
+
+// ─── INIT ──────────────────────────────────────────────────────
+window.addEventListener('load', () => {
+  // Register Firebase messaging service worker
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/firebase-messaging-sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.log('SW registration failed:', err));
+  }
+  renderRegisterExtra();
+  // Check if Firebase config is set
+  if (firebaseConfig.apiKey === 'YOUR_API_KEY') {
+    hideOverlay();
+    document.getElementById('s-splash').querySelector('div').insertAdjacentHTML('beforeend',
+      `<div style="margin-top:24px;background:rgba(0,0,0,.3);border-radius:12px;padding:12px 16px;font-size:12px;line-height:1.6;text-align:left;color:#fff;">
+        ⚙️ <strong>Setup needed:</strong><br>
+        Replace the Firebase config in this file with your project credentials.
+        See SETUP.md for full instructions.
+      </div>`
+    );
+  }
+});
+</script>
+</body>
+</html>
